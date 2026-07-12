@@ -14,6 +14,5 @@ export default defineConfig({
 
   integrations: [react()],
 
-  site: 'https://boughris-abdelmalek.github.io',
-  base: '/ai-review-responses-landing-page',
+  site: 'https://replyomat.ai',
 });
