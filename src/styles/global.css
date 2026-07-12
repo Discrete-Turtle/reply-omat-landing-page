@@ -1,4 +1,9 @@
-@import url("https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400..700;1,9..144,400..700&family=Hanken+Grotesk:wght@400..800&family=Spline+Sans+Mono:wght@500;600&display=swap");
+/* Fraunces italic is only ever used for the hero accent phrase (.accent-voice
+   in Hero.astro), which carries no weight override of its own and so
+   inherits the base heading weight (500, set below). The italic axis request
+   is narrowed to that single weight instead of the full 400..700 range the
+   upright (ital=0) axis needs for bold h3s elsewhere on the page. */
+@import url("https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400..700;1,9..144,500&family=Hanken+Grotesk:wght@400..800&family=Spline+Sans+Mono:wght@500;600&display=swap");
 @import "tailwindcss";
 @import "tw-animate-css";
 @import "shadcn/tailwind.css";
