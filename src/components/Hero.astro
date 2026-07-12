@@ -356,7 +356,17 @@ const REPLY_TEXT =
     align-items: center;
     gap: 10px;
   }
-  .pc-approve {
+  /* :global() is required here: this markup is injected at runtime via
+     `actionRow.innerHTML = DRAFT_ACTIONS` in the state-machine script
+     below, so the elements never receive Astro's scoped `data-astro-cid-*`
+     attribute. A plain scoped `.pc-approve { ... }` rule compiles to
+     `.pc-approve[data-astro-cid-xxxx] { ... }`, which silently never
+     matches the dynamically-created button — it falls back to unstyled
+     inline text instead of a primary clay button (same failure mode fixed
+     for `.pc-published` above). The SSR-rendered reduced-motion end state
+     (lines 96-99) carries the scoping attribute, but `:global()` matches
+     it too, so both the static and JS-injected markup stay styled. */
+  :global(.pc-approve) {
     flex: 1;
     display: inline-flex;
     align-items: center;
@@ -372,11 +382,11 @@ const REPLY_TEXT =
     box-shadow: var(--pshadow);
     transition: transform 0.26s var(--ease-snap), background 0.2s;
   }
-  .pc-approve:hover {
+  :global(.pc-approve:hover) {
     background: var(--primary-h);
     transform: translateY(-2px);
   }
-  .pc-edit {
+  :global(.pc-edit) {
     display: inline-flex;
     align-items: center;
     gap: 8px;
@@ -389,7 +399,7 @@ const REPLY_TEXT =
     cursor: pointer;
     transition: background 0.22s, border-color 0.22s;
   }
-  .pc-edit:hover {
+  :global(.pc-edit:hover) {
     background: var(--hover);
     border-color: var(--b28);
   }
@@ -484,10 +494,14 @@ const REPLY_TEXT =
     // truth) instead of duplicating the copy here.
     const REPLY = typedEl.textContent || ""
 
-    const DRAFT_ACTIONS = `
-      <button type="button" tabindex="-1" class="pc-approve">Approve &amp; publish</button>
-      <button type="button" tabindex="-1" class="pc-edit">Edit</button>
-    `
+    // Same idea for the draft action buttons: the SSR markup (lines 96-99)
+    // already renders the exact "Approve & publish" / "Edit" buttons this
+    // phase needs, and at this point in the script nothing has touched
+    // `actionRow` yet, so its current innerHTML *is* that markup. Capture it
+    // here instead of hand-duplicating the button HTML in a template
+    // literal, so there's one source of truth for the draft-actions markup.
+    const DRAFT_ACTIONS = actionRow.innerHTML
+
     const PUBLISHED_CONFIRMATION = `
       <div class="pc-published">
         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
