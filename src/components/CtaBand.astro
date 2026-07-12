@@ -38,8 +38,20 @@
 </section>
 
 <style>
+  /* Measured (task-6, 2026-07-12): sampling actual rendered background
+     pixels directly behind .band-sub at 320/375/1440px viewports found the
+     worst-case sample (near the text's left edge, over the lightest part of
+     the gradient) at ~4.10-4.23:1 with white@0.92 — an AA fail at every
+     width tested, not just narrow ones (the wide 1440 panel still puts
+     centered text partly over the light corner). Raising alpha alone can't
+     fix it: even solid white@1.0 over the original 0% stop #c2693f is only
+     3.90:1. Fix: darken just the 0% stop to #b25c35 (same family, same
+     58%/100% stops, same 135deg) and use solid white text. Worst case
+     (white@1.0 over #b25c35) computes to 4.69:1 — verified against real
+     screenshots post-fix, see .superpowers/sdd/task-6-report.md.
+  */
   .band {
-    background: linear-gradient(135deg, #c2693f 0%, #a5542f 58%, #8f4a2c 100%);
+    background: linear-gradient(135deg, #b25c35 0%, #a5542f 58%, #8f4a2c 100%);
   }
 
   .band-ring {
@@ -56,10 +68,11 @@
   .band-sub {
     margin-left: auto;
     margin-right: auto;
-    /* Bumped from the reference's .85 alpha to .92 — measured against the
-       rendered gradient this subtext sits on, .85 dipped to ~4.2:1 (fails
-       AA for 16.5px regular text); .92 holds >=4.5:1 across the gradient. */
-    color: rgba(255, 255, 255, 0.92);
+    /* Solid white — see the .band gradient comment above. Even .92 alpha
+       could not clear 4.5:1 against the gradient's lightest region at any
+       viewport width; solid white + the darkened 0% stop together measure
+       >=4.5:1 worst-case (see .superpowers/sdd/task-6-report.md). */
+    color: #fff;
   }
 
   .band-btn {
