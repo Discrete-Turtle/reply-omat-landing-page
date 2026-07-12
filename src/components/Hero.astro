@@ -1,27 +1,549 @@
 ---
-
+/**
+ * Hero — headline + animated "draft to published" product card.
+ *
+ * The card's cycling reply zone (label, spinner, typewriter text, action row)
+ * is driven by a small vanilla-JS state machine below. The markup already
+ * renders the reduced-motion end state ("Your draft" + Approve & publish +
+ * Edit, full reply text, no cursor) so there's no flash of empty content and
+ * `prefers-reduced-motion` users (or anyone whose JS hasn't run yet) see a
+ * complete, correct card. When motion is allowed, the script takes over and
+ * restarts the cycle from the "drafting" phase.
+ *
+ * Timer hygiene: the cycle is paused (all timers cleared) whenever the card
+ * scrolls out of view or the tab is hidden, and resumed from the top when it
+ * re-enters — a `running` guard means resume() never stacks a second chain
+ * of timers on top of an existing one.
+ */
+const REPLY_TEXT =
+  "Thank you so much, Maria! The truffle mayo is our little obsession, so glad it won you over. See you next time!"
 ---
 
-<section
-        class="w-full max-w-7xl mx-auto px-6 lg:px-10 py-24 lg:py-32 flex flex-col items-center text-center relative overflow-hidden"
-        id="hero">
-    <div class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[800px] h-[800px] bg-primary/10 rounded-full blur-[100px] -z-10 pointer-events-none"></div>
-    <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-primary/10 border border-primary/20 text-primary text-xs font-semibold uppercase tracking-wider mb-8">
-        <span class="w-2 h-2 rounded-full bg-primary animate-pulse"></span>
-        Beta Access Open
-    </div>
-    <h1 class="text-5xl md:text-6xl lg:text-7xl font-bold font-display tracking-tight text-white mb-6 max-w-4xl leading-[1.1]">
-        Let AI handle your <br/>
-        <span class="text-transparent bg-clip-text bg-gradient-to-r from-primary via-indigo-400 to-purple-400">Google Reviews</span>
-        <br/>— instantly, at scale.
-    </h1>
-    <p class="text-slate-400 text-lg md:text-xl leading-relaxed max-w-2xl mb-10">
-        Turn every review into a growth opportunity. Our AI generates personalized, on-brand responses that boost
-        your local SEO and customer trust automatically.
-    </p>
-    <div class="flex flex-col sm:flex-row gap-4 items-center">
-        <button class="bg-white text-black hover:bg-slate-200 transition-all font-display font-bold text-lg px-8 py-4 rounded-full shadow-[0_0_30px_rgba(255,255,255,0.2)] hover:scale-105">
-            Get Early Access
+<section id="hero" class="relative w-full overflow-hidden" aria-label="Hero">
+  <div class="absolute top-[44%] left-[64%] pointer-events-none" aria-hidden="true">
+    <span class="ripple-ring"></span>
+    <span class="ripple-ring ripple-d1"></span>
+    <span class="ripple-ring ripple-d2"></span>
+  </div>
+
+  <div class="relative mx-auto grid max-w-[1200px] grid-cols-1 min-[860px]:grid-cols-[1.05fr_.95fr] gap-9 min-[860px]:gap-[52px] items-start min-[860px]:items-center px-5 min-[860px]:px-7 py-11 min-[860px]:py-[76px] pb-14 min-[860px]:pb-[84px]">
+    <div class="max-w-[560px]">
+      <div class="badge mb-[22px]">
+        <span class="dot" aria-hidden="true"></span>
+        Invite-only beta
+      </div>
+
+      <h1 class="text-ink text-[clamp(38px,5.4vw,66px)] mb-[22px]">
+        Your reviews, answered in your voice.
+      </h1>
+
+      <p class="mb-8 max-w-[480px] text-t2 text-[clamp(16px,1.4vw,19px)] leading-[1.6]">
+        ReplyOmat drafts a warm, on-brand reply to every Google review the moment it lands. You
+        read it, tweak it if you like, and publish straight to Google. One tap, no tab-juggling.
+      </p>
+
+      <div class="flex flex-wrap items-center gap-[14px]">
+        <button type="button" class="btn-primary">
+          Get Early Access
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <path d="M5 12h14M12 5l7 7-7 7"></path>
+          </svg>
         </button>
+        <a class="btn-ghost" href="#how-it-works">See how it works</a>
+      </div>
+
+      <div class="mt-[26px] flex items-center gap-[10px] text-t3 text-[13.5px]">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--ok)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <path d="M20 6L9 17l-5-5"></path>
+        </svg>
+        Nothing is posted without your approval.
+      </div>
     </div>
+
+    <div class="relative">
+      <div id="hero-card" class="product-card">
+        <div class="flex items-center gap-3">
+          <div class="pc-avatar" aria-hidden="true">M</div>
+          <div class="flex-1">
+            <div class="pc-name">Maria Sousa</div>
+            <div class="pc-meta">Local Guide · 2 days ago</div>
+          </div>
+          <span class="sr-only">Rated 5 out of 5 stars.</span>
+          <span class="pc-stars" aria-hidden="true">★★★★★</span>
+        </div>
+
+        <p class="pc-review-text">
+          Best fries in Porto! The truffle mayo is incredible and the staff were so friendly.
+        </p>
+
+        <div class="pc-divider"></div>
+
+        <div id="hero-cycle" aria-hidden="true">
+          <div class="pc-reply-head">
+            <span class="pc-mark"><span></span><span></span></span>
+            <span class="eyebrow" id="hero-reply-label">Your draft</span>
+            <span class="pc-spinner" id="hero-spinner" hidden></span>
+          </div>
+
+          <div class="pc-reply-box">
+            <p class="pc-reply-text">
+              <span id="hero-reply-typed">{REPLY_TEXT}</span><span class="pc-caret" id="hero-caret" hidden></span>
+            </p>
+          </div>
+
+          <div class="pc-action-row" id="hero-action-row">
+            <button type="button" tabindex="-1" class="pc-approve">Approve &amp; publish</button>
+            <button type="button" tabindex="-1" class="pc-edit">Edit</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="hero-chip hidden min-[860px]:flex">
+        <div class="chip-icon" aria-hidden="true">
+          <svg width="19" height="19" viewBox="0 0 24 24" fill="currentColor">
+            <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01z"></path>
+          </svg>
+        </div>
+        <div>
+          <div class="chip-title">Rated 4.8 on Google</div>
+          <div class="chip-sub">after replying to every review</div>
+        </div>
+      </div>
+    </div>
+  </div>
 </section>
+
+<style>
+  .badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    background: var(--chip);
+    border: 1px solid var(--chip-bd);
+    color: var(--accent-tx);
+    font: 600 12.5px var(--font-sans);
+    padding: 7px 14px;
+    border-radius: 99px;
+  }
+  .dot {
+    width: 7px;
+    height: 7px;
+    border-radius: 50%;
+    background: var(--primary);
+    animation: hero-pulse 2s ease-in-out infinite;
+  }
+  @keyframes hero-pulse {
+    0%, 100% { opacity: .4; }
+    50% { opacity: 1; }
+  }
+
+  .ripple-d1 { animation-delay: 2.33s; }
+  .ripple-d2 { animation-delay: 4.66s; }
+
+  .btn-primary {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 9px;
+    border: none;
+    background: var(--primary);
+    color: var(--pf);
+    font: 700 15px var(--font-sans);
+    padding: 14px 22px;
+    border-radius: 11px;
+    cursor: pointer;
+    box-shadow: var(--pshadow);
+    transition: transform 0.26s var(--ease-snap), background 0.2s;
+  }
+  .btn-primary:hover {
+    background: var(--primary-h);
+    transform: translateY(-2px);
+  }
+  .btn-primary:focus-visible {
+    outline: 2px solid var(--ink);
+    outline-offset: 2px;
+  }
+
+  .btn-ghost {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    border: 1px solid var(--b16);
+    background: var(--card);
+    color: var(--t1);
+    font: 600 15px var(--font-sans);
+    padding: 13px 20px;
+    border-radius: 11px;
+    cursor: pointer;
+    transition: background 0.22s, border-color 0.22s;
+  }
+  .btn-ghost:hover {
+    background: var(--hover);
+    border-color: var(--b28);
+  }
+  .btn-ghost:focus-visible {
+    outline: 2px solid var(--primary);
+    outline-offset: 2px;
+  }
+
+  .product-card {
+    position: relative;
+    background: var(--card);
+    border: 1px solid var(--b08);
+    border-radius: 17px;
+    padding: 22px 22px 20px;
+    box-shadow: 0 40px 80px -40px rgba(34, 30, 25, .5);
+  }
+
+  .pc-avatar {
+    width: 42px;
+    height: 42px;
+    border-radius: 50%;
+    /* one-off avatar swatch from the pixel reference — not part of the clay token set */
+    background: #e7ddcb;
+    color: #9a7b3f;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font: 700 16px var(--font-sans);
+    flex-shrink: 0;
+  }
+  .pc-name {
+    font: 600 14.5px var(--font-sans);
+    color: var(--ink);
+  }
+  .pc-meta {
+    font-size: 12px;
+    color: var(--t3);
+  }
+  .pc-stars {
+    color: var(--gold);
+    letter-spacing: 2px;
+    font-size: 15px;
+  }
+  .pc-review-text {
+    margin: 14px 0 0;
+    font-size: 14.5px;
+    line-height: 1.6;
+    color: var(--t1);
+  }
+  .pc-divider {
+    margin: 18px 0;
+    height: 1px;
+    background: var(--b08);
+  }
+
+  .pc-mark {
+    position: relative;
+    display: inline-block;
+    width: 18px;
+    height: 18px;
+    flex-shrink: 0;
+  }
+  .pc-mark span:first-child {
+    position: absolute;
+    top: 14%;
+    left: 2%;
+    width: 62%;
+    height: 31%;
+    border-radius: 3px;
+    background: var(--star-off);
+  }
+  .pc-mark span:last-child {
+    position: absolute;
+    bottom: 14%;
+    right: 2%;
+    width: 76%;
+    height: 31%;
+    border-radius: 3px;
+    background: var(--primary);
+  }
+
+  .pc-reply-head {
+    display: flex;
+    align-items: center;
+    gap: 9px;
+    margin-bottom: 11px;
+  }
+  .pc-spinner {
+    width: 13px;
+    height: 13px;
+    border: 2px solid var(--b16);
+    border-top-color: var(--primary);
+    border-radius: 50%;
+    display: inline-block;
+    animation: hero-spin .7s linear infinite;
+  }
+  @keyframes hero-spin {
+    to { transform: rotate(360deg); }
+  }
+
+  .pc-reply-box {
+    min-height: 96px;
+    background: var(--inset);
+    border: 1px solid var(--b08);
+    border-radius: 12px;
+    padding: 14px 15px;
+  }
+  .pc-reply-text {
+    margin: 0;
+    font-size: 14px;
+    line-height: 1.62;
+    color: var(--t1);
+  }
+  .pc-caret {
+    display: inline-block;
+    width: 2px;
+    height: 15px;
+    background: var(--primary);
+    vertical-align: -3px;
+    margin-left: 1px;
+    animation: hero-caret-blink .8s step-end infinite;
+  }
+  @keyframes hero-caret-blink {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0; }
+  }
+
+  .pc-action-row {
+    margin-top: 14px;
+    height: 44px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  .pc-approve {
+    flex: 1;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    border: none;
+    background: var(--primary);
+    color: var(--pf);
+    font: 700 14px var(--font-sans);
+    padding: 11px 14px;
+    border-radius: 11px;
+    cursor: pointer;
+    box-shadow: var(--pshadow);
+    transition: transform 0.26s var(--ease-snap), background 0.2s;
+  }
+  .pc-approve:hover {
+    background: var(--primary-h);
+    transform: translateY(-2px);
+  }
+  .pc-approve:focus-visible {
+    outline: 2px solid var(--ink);
+    outline-offset: 2px;
+  }
+  .pc-edit {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    border: 1px solid var(--b16);
+    background: var(--card);
+    color: var(--t1);
+    font: 600 14px var(--font-sans);
+    padding: 11px 14px;
+    border-radius: 11px;
+    cursor: pointer;
+    transition: background 0.22s, border-color 0.22s;
+  }
+  .pc-edit:hover {
+    background: var(--hover);
+    border-color: var(--b28);
+  }
+  .pc-published {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    gap: 9px;
+    background: var(--ok-bg);
+    color: var(--ok);
+    border-radius: 10px;
+    padding: 11px 14px;
+    font: 600 13.5px var(--font-sans);
+  }
+
+  .hero-chip {
+    position: absolute;
+    bottom: -26px;
+    right: -20px;
+    align-items: center;
+    gap: 11px;
+    background: var(--card);
+    border: 1px solid var(--b12);
+    border-radius: 14px;
+    padding: 12px 15px;
+    box-shadow: 0 18px 34px -22px rgba(34, 30, 25, .55);
+  }
+  .chip-icon {
+    width: 38px;
+    height: 38px;
+    border-radius: 50%;
+    background: var(--chip);
+    color: var(--gold);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+  }
+  .chip-title {
+    font: 700 14.5px var(--font-sans);
+    color: var(--ink);
+  }
+  .chip-sub {
+    font-size: 11.5px;
+    color: var(--t3);
+    margin-top: 1px;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .dot,
+    .pc-spinner,
+    .pc-caret {
+      animation: none;
+    }
+    .btn-primary,
+    .pc-approve {
+      transition: none;
+    }
+    .btn-primary:hover,
+    .pc-approve:hover {
+      transform: none;
+    }
+  }
+</style>
+
+<script>
+  ;(function () {
+    const card = document.getElementById("hero-card")
+    const labelEl = document.getElementById("hero-reply-label")
+    const spinnerEl = document.getElementById("hero-spinner")
+    const typedEl = document.getElementById("hero-reply-typed")
+    const caretEl = document.getElementById("hero-caret")
+    const actionRow = document.getElementById("hero-action-row")
+    if (!card || !labelEl || !spinnerEl || !typedEl || !caretEl || !actionRow) return
+
+    // The markup already renders this exact reduced-motion end state, so
+    // there is nothing left to do when motion is disabled.
+    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return
+
+    // Read the reply text from the server-rendered markup (single source of
+    // truth) instead of duplicating the copy here.
+    const REPLY = typedEl.textContent || ""
+
+    const DRAFT_ACTIONS = `
+      <button type="button" tabindex="-1" class="pc-approve">Approve &amp; publish</button>
+      <button type="button" tabindex="-1" class="pc-edit">Edit</button>
+    `
+    const PUBLISHED_CONFIRMATION = `
+      <div class="pc-published">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <path d="M20 6L9 17l-5-5"></path>
+        </svg>
+        Published to Google
+      </div>
+    `
+
+    const DRAFTING_DELAY_MS = 1100
+    const TYPE_TICK_MS = 34
+    const DRAFT_READY_DELAY_MS = 700
+    const DRAFT_HOLD_MS = 1900
+    const PUBLISHED_HOLD_MS = 2600
+
+    let timers: number[] = []
+    let typeIntervalId: number | null = null
+    let running = false
+    let inView = false
+
+    function after(ms: number, fn: () => void) {
+      timers.push(window.setTimeout(fn, ms))
+    }
+
+    function clearTimers() {
+      timers.forEach((id) => window.clearTimeout(id))
+      timers = []
+      if (typeIntervalId !== null) {
+        window.clearInterval(typeIntervalId)
+        typeIntervalId = null
+      }
+    }
+
+    function phaseDrafting() {
+      labelEl!.textContent = "Drafting a reply"
+      ;(spinnerEl as HTMLElement).hidden = false
+      ;(caretEl as HTMLElement).hidden = true
+      typedEl!.textContent = ""
+      actionRow!.innerHTML = ""
+      after(DRAFTING_DELAY_MS, phaseTyping)
+    }
+
+    function phaseTyping() {
+      ;(spinnerEl as HTMLElement).hidden = true
+      ;(caretEl as HTMLElement).hidden = false
+      let shown = 0
+      const step = Math.max(1, Math.round(REPLY.length / 60))
+      typeIntervalId = window.setInterval(() => {
+        shown += step
+        if (shown >= REPLY.length) {
+          typedEl!.textContent = REPLY
+          window.clearInterval(typeIntervalId!)
+          typeIntervalId = null
+          after(DRAFT_READY_DELAY_MS, phaseDraft)
+          return
+        }
+        typedEl!.textContent = REPLY.slice(0, shown)
+      }, TYPE_TICK_MS)
+    }
+
+    function phaseDraft() {
+      ;(caretEl as HTMLElement).hidden = true
+      labelEl!.textContent = "Your draft"
+      actionRow!.innerHTML = DRAFT_ACTIONS
+      after(DRAFT_HOLD_MS, phasePublished)
+    }
+
+    function phasePublished() {
+      actionRow!.innerHTML = PUBLISHED_CONFIRMATION
+      after(PUBLISHED_HOLD_MS, phaseDrafting)
+    }
+
+    // A single `running` guard means resume() is a no-op while a cycle is
+    // already active, so re-entering the viewport or refocusing the tab
+    // never stacks a second chain of timers on top of the existing one.
+    function resume() {
+      if (running) return
+      running = true
+      phaseDrafting()
+    }
+
+    function pause() {
+      running = false
+      clearTimers()
+    }
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((entry) => {
+          inView = entry.isIntersecting
+          if (inView && !document.hidden) {
+            resume()
+          } else {
+            pause()
+          }
+        })
+      },
+      { threshold: 0.2 }
+    )
+    observer.observe(card)
+
+    document.addEventListener("visibilitychange", () => {
+      if (document.hidden) {
+        pause()
+      } else if (inView) {
+        resume()
+      }
+    })
+  })()
+</script>
