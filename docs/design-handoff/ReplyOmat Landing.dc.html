@@ -1,0 +1,376 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600;9..144,700&family=Hanken+Grotesk:wght@400;500;600;700;800&family=Spline+Sans+Mono:wght@500;600&display=swap" rel="stylesheet">
+<style>
+  *{box-sizing:border-box}
+  :root{
+    --bg:#f7f3ec;--card:#fffdf9;--inset:#faf6ef;--board:#e9e2d6;--hover:#f1ebe1;
+    --ink:#221e19;--t1:#3a342c;--t2:#5b5347;--t3:#7a7264;--t4:#8a8175;
+    --primary:#c2693f;--primary-h:#b35c34;--pf:#fff;--accent-tx:#b35a35;
+    --chip:#fbeee7;--chip-bd:#eac9b6;--ok:#3f8a64;--ok-bg:#e7f0e9;--gold:#e0a82e;--star-off:#ddd5c8;
+    --b06:rgba(34,30,25,.06);--b08:rgba(34,30,25,.08);--b12:rgba(34,30,25,.12);--b16:rgba(34,30,25,.16);--b28:rgba(34,30,25,.28);
+    --pshadow:0 8px 18px -8px rgba(194,105,63,.7);
+    --sans:"Hanken Grotesk",system-ui,sans-serif;--serif:"Fraunces",Georgia,serif;--mono:"Spline Sans Mono",monospace;
+  }
+  .dark{
+    --bg:#1e1a15;--card:#28231d;--inset:#2f2922;--board:#141009;--hover:#332d26;
+    --ink:#f3ede2;--t1:#e7dfd3;--t2:#bbb2a4;--t3:#a79e90;--t4:#978e7f;
+    --primary:#d57e52;--primary-h:#c2693f;--pf:#28231d;--accent-tx:#e6a679;
+    --chip:#3a2a21;--chip-bd:#6d4c39;--ok:#74c39a;--ok-bg:#26352c;--gold:#e0a82e;--star-off:#4a443a;
+    --b06:rgba(255,255,255,.07);--b08:rgba(255,255,255,.09);--b12:rgba(255,255,255,.13);--b16:rgba(255,255,255,.18);--b28:rgba(255,255,255,.3);
+  }
+  html{scroll-behavior:smooth}
+  body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--sans);-webkit-font-smoothing:antialiased;transition:background .3s,color .3s}
+  a{color:inherit;text-decoration:none}
+  ::selection{background:var(--primary);color:var(--pf)}
+  .wrap{overflow-x:hidden;background:var(--bg);min-height:100vh;color:var(--ink);transition:background .3s,color .3s}
+  .mx{max-width:1200px;margin:0 auto;padding:0 28px}
+  .eyebrow{font:600 12px/1 var(--mono);letter-spacing:.14em;text-transform:uppercase;color:var(--accent-tx)}
+  .h-disp{font-family:var(--serif);font-weight:500;letter-spacing:-.02em;line-height:1.04}
+  .btn-p{display:inline-flex;align-items:center;justify-content:center;gap:9px;border:none;background:var(--primary);color:var(--pf);font:700 15px var(--sans);padding:14px 22px;border-radius:11px;cursor:pointer;box-shadow:var(--pshadow);transition:transform .26s cubic-bezier(.22,.61,.36,1),background .2s}
+  .btn-p:hover{background:var(--primary-h);transform:translateY(-2px)}
+  .btn-g{display:inline-flex;align-items:center;gap:8px;border:1px solid var(--b16);background:var(--card);color:var(--t1);font:600 15px var(--sans);padding:13px 20px;border-radius:11px;cursor:pointer;transition:.22s}
+  .btn-g:hover{background:var(--hover);border-color:var(--b28)}
+  .mark{position:relative;display:inline-block;width:26px;height:26px;flex-shrink:0}
+  .mark::before,.mark::after{content:"";position:absolute;height:31%;border-radius:3px}
+  .mark::before{top:14%;left:2%;width:62%;background:var(--star-off)}
+  .mark::after{bottom:14%;right:2%;width:76%;background:var(--primary)}
+  .card{background:var(--card);border:1px solid var(--b08);border-radius:17px}
+
+  /* header */
+  .hdr{position:sticky;top:0;z-index:50;backdrop-filter:blur(12px);background:color-mix(in srgb,var(--bg) 82%,transparent);border-bottom:1px solid transparent;transition:border-color .3s,background .3s}
+  .hdr.scr{border-bottom-color:var(--b08)}
+  .navlink{font:600 14.5px var(--sans);color:var(--t2);padding:8px 4px;position:relative;transition:color .2s}
+  .navlink::after{content:"";position:absolute;left:0;bottom:2px;width:0;height:2px;background:var(--primary);transition:width .26s cubic-bezier(.22,.61,.36,1)}
+  .navlink:hover{color:var(--ink)}.navlink:hover::after{width:100%}
+  .tgl{width:38px;height:38px;border-radius:10px;border:1px solid var(--b12);background:var(--card);display:flex;align-items:center;justify-content:center;color:var(--t2);cursor:pointer;transition:.2s}
+  .tgl:hover{background:var(--hover);color:var(--ink)}
+
+  /* hero */
+  .ripple{position:absolute;border:1.5px solid var(--primary);border-radius:50%;opacity:0;transform:translate(-50%,-50%);animation:rip 7s ease-out infinite}
+  @keyframes rip{0%{width:180px;height:180px;opacity:.22}100%{width:1100px;height:1100px;opacity:0}}
+  .badge{display:inline-flex;align-items:center;gap:8px;background:var(--chip);border:1px solid var(--chip-bd);color:var(--accent-tx);font:600 12.5px var(--sans);padding:7px 14px;border-radius:99px}
+  .dot{width:7px;height:7px;border-radius:50%;background:var(--primary);animation:pulse 2s ease-in-out infinite}
+  @keyframes pulse{0%,100%{opacity:.4}50%{opacity:1}}
+  .stars{color:var(--gold);letter-spacing:2px;font-size:15px}
+  .revline{height:9px;border-radius:5px;background:var(--board)}
+
+  .reveal{opacity:0;transform:translateY(22px);transition:opacity .7s cubic-bezier(.22,.61,.36,1),transform .7s cubic-bezier(.22,.61,.36,1)}
+  .reveal.in{opacity:1;transform:none}
+
+  .feat{background:var(--card);border:1px solid var(--b08);border-radius:17px;padding:26px;transition:transform .26s cubic-bezier(.22,.61,.36,1),border-color .26s,box-shadow .26s}
+  .feat:hover{transform:translateY(-3px);border-color:var(--chip-bd);box-shadow:0 22px 44px -30px rgba(34,30,25,.5)}
+  .ficon{width:46px;height:46px;border-radius:12px;background:var(--chip);color:var(--accent-tx);display:flex;align-items:center;justify-content:center;margin-bottom:16px}
+
+  .step{position:relative;padding-left:64px}
+  .stepnum{position:absolute;left:0;top:0;width:46px;height:46px;border-radius:50%;background:var(--card);border:1px solid var(--chip-bd);color:var(--accent-tx);font:700 18px var(--serif);display:flex;align-items:center;justify-content:center;z-index:2}
+  .stepline{position:absolute;left:22.5px;top:46px;bottom:-30px;width:2px;background:linear-gradient(var(--chip-bd),transparent)}
+
+  .price{background:var(--card);border:1px solid var(--b08);border-radius:18px;padding:30px;display:flex;flex-direction:column;transition:.26s}
+  .price.hot{border-color:var(--primary);box-shadow:0 30px 60px -34px rgba(194,105,63,.6);position:relative}
+  .price:hover{transform:translateY(-3px)}
+  .ptag{position:absolute;top:-12px;left:50%;transform:translateX(-50%);background:var(--primary);color:var(--pf);font:700 11px var(--mono);letter-spacing:.08em;text-transform:uppercase;padding:5px 14px;border-radius:99px}
+  .tick{color:var(--ok);flex-shrink:0}
+
+  .hero-grid{display:grid;grid-template-columns:1.05fr .95fr;gap:52px;align-items:center;padding:76px 28px 84px;position:relative}
+  .feat-grid{display:grid;grid-template-columns:1.4fr 1fr 1fr;grid-auto-rows:1fr;gap:16px}
+  .feat-tall{grid-row:span 2}
+  .feat-wide{grid-column:span 2}
+  .how-grid{display:grid;grid-template-columns:.85fr 1.15fr;gap:56px;align-items:start}
+  .how-sticky{position:sticky;top:96px}
+  .price-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:18px;align-items:stretch}
+  @media(prefers-reduced-motion:reduce){.ripple,.dot{animation:none}.reveal{transition:none;opacity:1;transform:none}}
+  @media(max-width:900px){
+    .price-grid{grid-template-columns:1fr;max-width:440px;margin:0 auto}
+  }
+  @media(max-width:860px){.mx{padding:0 20px}.hidem{display:none!important}
+    .hero-grid{grid-template-columns:1fr;gap:36px;padding:44px 20px 56px}
+    .feat-grid{grid-template-columns:1fr}
+    .feat-tall{grid-row:auto}.feat-wide{grid-column:auto}
+    .how-grid{grid-template-columns:1fr;gap:32px}
+    .how-sticky{position:static}
+    .foot-grid{grid-template-columns:1fr 1fr;gap:28px}
+  }
+  @media(max-width:520px){.foot-grid{grid-template-columns:1fr}}
+</style>
+</helmet>
+
+<div class="wrap {{ themeCls }}">
+
+  <!-- HEADER -->
+  <header class="{{ hdrCls }}">
+    <div class="mx" style="display:flex;align-items:center;justify-content:space-between;height:68px">
+      <a href="#top" style="display:flex;align-items:center;gap:10px"><span class="mark"></span><span style="font:800 19px var(--sans);letter-spacing:-.01em">reply<span style="color:var(--primary)">omat</span></span></a>
+      <nav class="hidem" style="display:flex;align-items:center;gap:30px">
+        <a class="navlink" href="#features">Features</a>
+        <a class="navlink" href="#how">How it works</a>
+        <a class="navlink" href="#pricing">Pricing</a>
+      </nav>
+      <div style="display:flex;align-items:center;gap:12px">
+        <button class="tgl" onClick="{{ toggleTheme }}" aria-label="Toggle theme">
+          <sc-if value="{{ isLight }}" hint-placeholder-val="{{ true }}"><svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path></svg></sc-if>
+          <sc-if value="{{ isDark }}" hint-placeholder-val="{{ false }}"><svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="4"></circle><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"></path></svg></sc-if>
+        </button>
+        <button class="btn-p" style="padding:11px 18px">Get Early Access</button>
+      </div>
+    </div>
+  </header>
+
+  <!-- HERO -->
+  <section id="top" style="position:relative;overflow:hidden">
+    <div style="position:absolute;top:44%;left:64%;pointer-events:none" aria-hidden="true">
+      <div class="ripple"></div><div class="ripple" style="animation-delay:2.33s"></div><div class="ripple" style="animation-delay:4.66s"></div>
+    </div>
+    <div class="mx hero-grid">
+      <div style="max-width:560px">
+        <div class="badge" style="margin-bottom:22px"><span class="dot"></span>Invite-only beta</div>
+        <h1 class="h-disp" style="font-size:clamp(38px,5.4vw,66px);margin:0 0 22px">Your reviews, answered in your voice.</h1>
+        <p style="font-size:clamp(16px,1.4vw,19px);line-height:1.6;color:var(--t2);margin:0 0 32px;max-width:480px">ReplyOmat drafts a warm, on-brand reply to every Google review the moment it lands. You read it, tweak it if you like, and publish straight to Google. One tap, no tab-juggling.</p>
+        <div style="display:flex;gap:14px;flex-wrap:wrap;align-items:center">
+          <button class="btn-p">Get Early Access <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M5 12h14M12 5l7 7-7 7"></path></svg></button>
+          <a class="btn-g" href="#how">See how it works</a>
+        </div>
+        <div style="display:flex;align-items:center;gap:10px;margin-top:26px;color:var(--t3);font-size:13.5px"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="var(--ok)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M20 6L9 17l-5-5"></path></svg>Nothing is posted without your approval.</div>
+      </div>
+
+      <!-- animated product visual -->
+      <div style="position:relative">
+        <div class="card" style="padding:22px 22px 20px;box-shadow:0 40px 80px -40px rgba(34,30,25,.5)">
+          <div style="display:flex;align-items:center;gap:12px">
+            <div style="width:42px;height:42px;border-radius:50%;background:#e7ddcb;color:#9a7b3f;display:flex;align-items:center;justify-content:center;font:700 16px var(--sans)">M</div>
+            <div style="flex:1"><div style="font:600 14.5px var(--sans)">Maria Sousa</div><div style="font-size:12px;color:var(--t3)">Local Guide · 2 days ago</div></div>
+            <span class="stars">★★★★★</span>
+          </div>
+          <p style="margin:14px 0 0;font-size:14.5px;line-height:1.6;color:var(--t1)">Best fries in Porto! The truffle mayo is incredible and the staff were so friendly.</p>
+
+          <div style="margin:18px 0;height:1px;background:var(--b08)"></div>
+
+          <!-- reply zone: cycles through phases -->
+          <div style="display:flex;align-items:center;gap:9px;margin-bottom:11px">
+            <span class="mark" style="width:18px;height:18px"></span>
+            <span class="eyebrow">{{ replyLabel }}</span>
+            <sc-if value="{{ phaseGen }}" hint-placeholder-val="{{ false }}"><span style="width:13px;height:13px;border:2px solid var(--b16);border-top-color:var(--primary);border-radius:50%;display:inline-block;animation:spin .7s linear infinite"></span></sc-if>
+          </div>
+          <div style="min-height:96px;background:var(--inset);border:1px solid var(--b08);border-radius:12px;padding:14px 15px">
+            <p style="margin:0;font-size:14px;line-height:1.62;color:var(--t1)">{{ replyText }}<sc-if value="{{ phaseType }}" hint-placeholder-val="{{ false }}"><span style="display:inline-block;width:2px;height:15px;background:var(--primary);vertical-align:-3px;margin-left:1px;animation:pulse .8s step-end infinite"></span></sc-if></p>
+          </div>
+
+          <div style="margin-top:14px;height:44px;display:flex;align-items:center;gap:10px">
+            <sc-if value="{{ phasePublished }}" hint-placeholder-val="{{ false }}">
+              <div style="flex:1;display:flex;align-items:center;gap:9px;background:var(--ok-bg);color:var(--ok);border-radius:10px;padding:11px 14px;font:600 13.5px var(--sans)"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><path d="M20 6L9 17l-5-5"></path></svg>Published to Google</div>
+            </sc-if>
+            <sc-if value="{{ phaseAct }}" hint-placeholder-val="{{ true }}">
+              <button class="btn-p" style="flex:1;padding:11px 14px;font-size:14px">Approve &amp; publish</button>
+              <button class="btn-g" style="padding:11px 14px;font-size:14px">Edit</button>
+            </sc-if>
+          </div>
+        </div>
+        <div style="position:absolute;bottom:-26px;right:-20px;background:var(--card);border:1px solid var(--b12);border-radius:14px;padding:12px 15px;box-shadow:0 18px 34px -22px rgba(34,30,25,.55);display:flex;align-items:center;gap:11px" class="hidem">
+          <div style="width:38px;height:38px;border-radius:50%;background:var(--chip);display:flex;align-items:center;justify-content:center;color:var(--gold);flex-shrink:0"><svg viewBox="0 0 24 24" width="19" height="19" fill="currentColor"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01z"/></svg></div>
+          <div><div style="font:700 14.5px var(--sans);color:var(--ink)">Rated 4.8 on Google</div><div style="font-size:11.5px;color:var(--t3);margin-top:1px">after replying to every review</div></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- FEATURES -->
+  <section id="features" style="padding:74px 0">
+    <div class="mx">
+      <div class="reveal" style="max-width:640px;margin-bottom:40px">
+        <div class="eyebrow" style="margin-bottom:14px">Everything, in your voice</div>
+        <h2 class="h-disp" style="font-size:clamp(30px,3.6vw,44px);margin:0">Built for owners who don't have time to babysit reviews.</h2>
+      </div>
+      <div class="feat-grid">
+        <!-- big feature -->
+        <div class="feat reveal feat-tall" style="display:flex;flex-direction:column;justify-content:space-between">
+          <div>
+            <div class="ficon"><svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M12 20h9"></path><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4z"></path></svg></div>
+            <h3 style="font:700 21px var(--sans);margin:0 0 8px">Brand tone control</h3>
+            <p style="margin:0;color:var(--t2);font-size:15px;line-height:1.6">Tell ReplyOmat about your place once and pick a voice, warm, brief, or formal. Every draft sounds like you wrote it, not a bot.</p>
+          </div>
+          <div style="margin-top:22px;display:flex;gap:8px;flex-wrap:wrap">
+            <span style="background:var(--chip);border:1px solid var(--chip-bd);color:var(--accent-tx);font:600 12.5px var(--sans);padding:7px 13px;border-radius:99px">Warm</span>
+            <span style="background:var(--inset);border:1px solid var(--b12);color:var(--t3);font:600 12.5px var(--sans);padding:7px 13px;border-radius:99px">Brief</span>
+            <span style="background:var(--inset);border:1px solid var(--b12);color:var(--t3);font:600 12.5px var(--sans);padding:7px 13px;border-radius:99px">Formal</span>
+          </div>
+        </div>
+        <div class="feat reveal">
+          <div class="ficon"><svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M20 6L9 17l-5-5"></path></svg></div>
+          <h3 style="font:700 18px var(--sans);margin:0 0 7px">Approve &amp; publish</h3>
+          <p style="margin:0;color:var(--t2);font-size:14px;line-height:1.55">One tap from draft to live on Google. No copy-paste, no tab juggling.</p>
+        </div>
+        <div class="feat reveal">
+          <div class="ficon"><svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path><circle cx="12" cy="10" r="3"></circle></svg></div>
+          <h3 style="font:700 18px var(--sans);margin:0 0 7px">Multi-location</h3>
+          <p style="margin:0;color:var(--t2);font-size:14px;line-height:1.55">Run every storefront from one place, each with its own voice and team.</p>
+        </div>
+        <div class="feat reveal feat-wide">
+          <div style="display:flex;gap:18px;align-items:center">
+            <div class="ficon" style="margin-bottom:0"><svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M22 12h-6l-2 3h-4l-2-3H2"></path><path d="M5.45 5.11L2 12v6a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-6l-3.45-6.89A2 2 0 0 0 16.76 4H7.24a2 2 0 0 0-1.79 1.11z"></path></svg></div>
+            <div><h3 style="font:700 18px var(--sans);margin:0 0 6px">Every review, automatically</h3><p style="margin:0;color:var(--t2);font-size:14px;line-height:1.55">Connected straight to your Google Business profile, so new reviews land in ReplyOmat the moment they're posted. Nothing to import, nothing to check.</p></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- HOW IT WORKS -->
+  <section id="how" style="padding:74px 0;background:var(--board)">
+    <div class="mx how-grid">
+      <div class="reveal how-sticky">
+        <div class="eyebrow" style="margin-bottom:14px">How it works</div>
+        <h2 class="h-disp" style="font-size:clamp(30px,3.6vw,44px);margin:0 0 16px">From new review to posted reply in about ten seconds.</h2>
+        <p style="margin:0;color:var(--t2);font-size:16px;line-height:1.6">No dashboards to learn. You approve, we handle the rest.</p>
+      </div>
+      <div style="display:flex;flex-direction:column;gap:30px">
+        <div class="step reveal"><div class="stepline"></div><div class="stepnum">1</div><h3 style="font:700 19px var(--sans);margin:0 0 7px">A review lands</h3><p style="margin:0;color:var(--t2);font-size:15px;line-height:1.6">ReplyOmat is connected to your Google Business profile and flags every new review waiting for a reply.</p></div>
+        <div class="step reveal"><div class="stepline"></div><div class="stepnum">2</div><h3 style="font:700 19px var(--sans);margin:0 0 7px">AI drafts it in your voice</h3><p style="margin:0;color:var(--t2);font-size:15px;line-height:1.6">A personalized reply appears, matched to the review and your chosen tone. Not a template.</p></div>
+        <div class="step reveal"><div class="stepnum">3</div><h3 style="font:700 19px var(--sans);margin:0 0 7px">You approve, it posts to Google</h3><p style="margin:0;color:var(--t2);font-size:15px;line-height:1.6">Read it, tweak a word if you like, tap publish. It's live on your listing instantly.</p></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- PRICING -->
+  <section id="pricing" style="padding:80px 0">
+    <div class="mx">
+      <div class="reveal" style="text-align:center;max-width:560px;margin:0 auto 44px">
+        <div class="eyebrow" style="margin-bottom:14px">Pricing</div>
+        <h2 class="h-disp" style="font-size:clamp(30px,3.6vw,44px);margin:0 0 12px">Simple plans that grow with you.</h2>
+        <p style="margin:0;color:var(--t2);font-size:16px">Start free in the beta. Upgrade when the reviews pile up.</p>
+      </div>
+      <div class="price-grid">
+        <div class="price reveal">
+          <div style="font:600 14px var(--mono);letter-spacing:.06em;text-transform:uppercase;color:var(--t3)">Starter</div>
+          <div style="margin:14px 0 4px;font-family:var(--serif);font-size:44px;font-weight:500">€0</div>
+          <div style="color:var(--t3);font-size:13.5px;margin-bottom:20px">1 location · 30 replies / mo</div>
+          <div style="display:flex;flex-direction:column;gap:11px;font-size:14px;color:var(--t1);flex:1">
+            <div style="display:flex;gap:9px"><span class="tick"><svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><path d="M20 6L9 17l-5-5"></path></svg></span>One Google location</div>
+            <div style="display:flex;gap:9px"><span class="tick"><svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><path d="M20 6L9 17l-5-5"></path></svg></span>Tone control</div>
+            <div style="display:flex;gap:9px"><span class="tick"><svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><path d="M20 6L9 17l-5-5"></path></svg></span>Approve &amp; publish</div>
+          </div>
+          <button class="btn-g" style="margin-top:24px;justify-content:center">Get Early Access</button>
+        </div>
+        <div class="price hot reveal">
+          <div class="ptag">Most popular</div>
+          <div style="font:600 14px var(--mono);letter-spacing:.06em;text-transform:uppercase;color:var(--accent-tx)">Growth</div>
+          <div style="margin:14px 0 4px;font-family:var(--serif);font-size:44px;font-weight:500">€29<span style="font-size:16px;color:var(--t3);font-family:var(--sans)">/mo</span></div>
+          <div style="color:var(--t3);font-size:13.5px;margin-bottom:20px">Up to 5 locations · unlimited replies</div>
+          <div style="display:flex;flex-direction:column;gap:11px;font-size:14px;color:var(--t1);flex:1">
+            <div style="display:flex;gap:9px"><span class="tick"><svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><path d="M20 6L9 17l-5-5"></path></svg></span>Up to 5 locations</div>
+            <div style="display:flex;gap:9px"><span class="tick"><svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><path d="M20 6L9 17l-5-5"></path></svg></span>Unlimited replies</div>
+            <div style="display:flex;gap:9px"><span class="tick"><svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><path d="M20 6L9 17l-5-5"></path></svg></span>Team members &amp; roles</div>
+            <div style="display:flex;gap:9px"><span class="tick"><svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><path d="M20 6L9 17l-5-5"></path></svg></span>Priority drafting</div>
+          </div>
+          <button class="btn-p" style="margin-top:24px;justify-content:center">Get Early Access</button>
+        </div>
+        <div class="price reveal">
+          <div style="font:600 14px var(--mono);letter-spacing:.06em;text-transform:uppercase;color:var(--t3)">Enterprise</div>
+          <div style="margin:14px 0 4px;font-family:var(--serif);font-size:44px;font-weight:500">Custom</div>
+          <div style="color:var(--t3);font-size:13.5px;margin-bottom:20px">Chains &amp; franchises</div>
+          <div style="display:flex;flex-direction:column;gap:11px;font-size:14px;color:var(--t1);flex:1">
+            <div style="display:flex;gap:9px"><span class="tick"><svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><path d="M20 6L9 17l-5-5"></path></svg></span>Unlimited locations</div>
+            <div style="display:flex;gap:9px"><span class="tick"><svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><path d="M20 6L9 17l-5-5"></path></svg></span>SSO &amp; audit log</div>
+            <div style="display:flex;gap:9px"><span class="tick"><svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><path d="M20 6L9 17l-5-5"></path></svg></span>Dedicated support</div>
+          </div>
+          <button class="btn-g" style="margin-top:24px;justify-content:center">Contact us</button>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- CTA band -->
+  <section style="padding:0 0 80px">
+    <div class="mx">
+      <div class="reveal" style="position:relative;overflow:hidden;background:linear-gradient(135deg,#c2693f 0%,#a5542f 58%,#8f4a2c 100%);border-radius:22px;padding:56px 40px;text-align:center">
+        <div style="position:absolute;top:50%;left:50%;pointer-events:none" aria-hidden="true"><div class="ripple" style="border-color:rgba(255,255,255,.4);opacity:.5"></div><div class="ripple" style="animation-delay:3.5s;border-color:rgba(255,255,255,.4)"></div></div>
+        <h2 class="h-disp" style="font-size:clamp(28px,3.4vw,40px);margin:0 0 14px;color:#fff;position:relative">Stop dreading your reviews.</h2>
+        <p style="margin:0 auto 26px;color:rgba(255,255,255,.85);font-size:16.5px;max-width:440px;position:relative">Join the beta and let every reply sound like you, without the busywork.</p>
+        <button style="position:relative;display:inline-flex;align-items:center;justify-content:center;gap:9px;border:none;background:#fffdf9;color:#a5542f;font:700 15px var(--sans);padding:14px 24px;border-radius:11px;cursor:pointer;box-shadow:0 10px 24px -10px rgba(0,0,0,.45);transition:transform .26s cubic-bezier(.22,.61,.36,1)" onMouseOver="this.style.transform='translateY(-2px)'" onMouseOut="this.style.transform='none'">Get Early Access</button>
+      </div>
+    </div>
+  </section>
+
+  <!-- FOOTER -->
+  <footer style="border-top:1px solid var(--b08);padding:34px 0">
+    <div class="mx" style="display:flex;align-items:center;justify-content:space-between;gap:20px;flex-wrap:wrap">
+      <a href="#top" style="display:flex;align-items:center;gap:10px"><span class="mark" style="width:22px;height:22px"></span><span style="font:800 17px var(--sans)">reply<span style="color:var(--primary)">omat</span></span></a>
+      <nav style="display:flex;gap:26px;font:600 14px var(--sans)"><a class="navlink" href="#">Privacy Policy</a><a class="navlink" href="#">Terms of Service</a><a class="navlink" href="#">Contact</a></nav>
+      <div style="color:var(--t4);font-size:13px">© 2026 ReplyOmat</div>
+    </div>
+  </footer>
+
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script>
+class Component extends DCLogic {
+  state = { theme:'light', scrolled:false, phase:0, typed:'' };
+
+  // reply text that types out in phase 1
+  reply = "Thank you so much, Maria! The truffle mayo is our little obsession, so glad it won you over. See you next time!";
+
+  componentDidMount(){
+    // scrolled header
+    this._sc = ()=>{ const s = (this._scroller?this._scroller.scrollTop:window.scrollY) > 8; if(s!==this.state.scrolled) this.setState({scrolled:s}); };
+    this._scroller = this.findScroller();
+    (this._scroller||window).addEventListener('scroll', this._sc, {passive:true});
+
+    // scroll reveals
+    this._io = new IntersectionObserver((es)=>{ es.forEach(e=>{ if(e.isIntersecting){ e.target.classList.add('in'); this._io.unobserve(e.target);} }); }, {threshold:.16});
+    setTimeout(()=>{ document.querySelectorAll('.reveal').forEach(el=>this._io.observe(el)); }, 60);
+
+    this.runCycle();
+  }
+  componentWillUnmount(){ (this._scroller||window).removeEventListener('scroll', this._sc); clearTimeout(this._t); clearInterval(this._tw); if(this._io)this._io.disconnect(); }
+
+  findScroller(){
+    let n = this.el && this.el.parentElement;
+    while(n){ try{ const o=getComputedStyle(n).overflowY; if((o==='auto'||o==='scroll') && n.scrollHeight>n.clientHeight+4) return n; }catch(e){} n=n.parentElement; }
+    return null;
+  }
+
+  runCycle(){
+    // phase 0: review only (gen starting) -> 1: typing -> 2: draft ready (approve/edit) -> 3: published -> loop
+    const set=(p,cb,d)=>{ this._t=setTimeout(()=>{ this.setState({phase:p}); cb&&cb(); }, d); };
+    this.setState({phase:0, typed:''});
+    set(1, ()=>this.typeReply(), 1100);
+  }
+  typeReply(){
+    const full=this.reply; let i=0; clearInterval(this._tw);
+    this._tw=setInterval(()=>{
+      i+=Math.max(1,Math.round(full.length/60));
+      if(i>=full.length){ clearInterval(this._tw); this.setState({typed:full});
+        this._t=setTimeout(()=>this.setState({phase:2}), 700);
+        this._t2=setTimeout(()=>this.setState({phase:3}), 2600);
+        this._t3=setTimeout(()=>this.runCycle(), 5200);
+      } else { this.setState({typed:full.slice(0,i)}); }
+    }, 34);
+  }
+
+  renderVals(){
+    const s=this.state, p=s.phase;
+    const labels=['Drafting a reply','Drafting a reply','Your draft','Posted'];
+    return {
+      themeCls: s.theme==='dark'?'dark':'',
+      hdrCls: 'hdr'+(s.scrolled?' scr':''),
+      isLight: s.theme!=='dark', isDark: s.theme==='dark',
+      toggleTheme: ()=>this.setState({theme:s.theme==='dark'?'light':'dark'}),
+      replyLabel: labels[p],
+      replyText: (p===0?'':(p===1?s.typed:this.reply)),
+      phaseGen: p===0, phaseType: p===1,
+      phaseAct: p===2, phasePublished: p===3,
+    };
+  }
+}
+</script>
+</body>
+</html>
