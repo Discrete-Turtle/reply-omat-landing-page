@@ -160,7 +160,7 @@ const navLinks: NavLink[] = [
     var moonIcon = themeToggle && themeToggle.querySelector('[data-icon="moon"]')
     var sunIcon = themeToggle && themeToggle.querySelector('[data-icon="sun"]')
 
-    var syncIcon = function (isDark) {
+    var reflectThemeIcon = function (isDark) {
       if (!themeToggle) return
       if (moonIcon) moonIcon.classList.toggle("hidden", isDark)
       if (sunIcon) sunIcon.classList.toggle("hidden", !isDark)
@@ -168,7 +168,7 @@ const navLinks: NavLink[] = [
       themeToggle.setAttribute("aria-pressed", String(isDark))
     }
 
-    syncIcon(document.documentElement.classList.contains("dark"))
+    reflectThemeIcon(document.documentElement.classList.contains("dark"))
 
     if (themeToggle) {
       themeToggle.addEventListener("click", function () {
@@ -176,7 +176,7 @@ const navLinks: NavLink[] = [
         if (typeof window.__setTheme === "function") {
           window.__setTheme(isDark)
         }
-        syncIcon(isDark)
+        reflectThemeIcon(isDark)
       })
     }
   })()

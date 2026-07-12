@@ -27,3 +27,7 @@ pnpm-debug.log*
 
 # jetbrains setting folder
 .idea/
+
+# verification artifacts
+verify.html
+.playwright-cli/
