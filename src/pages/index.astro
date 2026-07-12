@@ -17,9 +17,34 @@ import Footer from '@/components/Footer.astro'
     <link rel="icon" type="image/svg+xml" href={`${import.meta.env.BASE_URL}favicon.svg`}/>
     <link rel="icon" href={`${import.meta.env.BASE_URL}favicon.ico`}/>
     <meta name="generator" content={Astro.generator}/>
-    <title>Astro + TailwindCSS</title>
+    <title>ReplyOmat — Your reviews, answered in your voice.</title>
+    <meta name="description" content="AI drafts on-brand replies to your Google reviews; you approve, it publishes to Google."/>
+    <meta property="og:title" content="ReplyOmat — Your reviews, answered in your voice."/>
+    <meta property="og:description" content="AI drafts on-brand replies to your Google reviews; you approve, it publishes to Google."/>
+    <meta property="og:url" content="https://replyomat.ai"/>
+    <meta property="og:type" content="website"/>
+    <meta name="twitter:card" content="summary_large_image"/>
+    <meta name="twitter:title" content="ReplyOmat — Your reviews, answered in your voice."/>
+    <meta name="twitter:description" content="AI drafts on-brand replies to your Google reviews; you approve, it publishes to Google."/>
+    <script is:inline>
+        (function () {
+            var stored = null;
+            try {
+                stored = localStorage.getItem('theme');
+            } catch (e) {}
+            var dark = stored ? stored === 'dark' : window.matchMedia('(prefers-color-scheme: dark)').matches;
+            document.documentElement.classList.toggle('dark', dark);
+
+            window.__setTheme = function (isDark) {
+                document.documentElement.classList.toggle('dark', isDark);
+                try {
+                    localStorage.setItem('theme', isDark ? 'dark' : 'light');
+                } catch (e) {}
+            };
+        })();
+    </script>
 </head>
-<body class="bg-background-dark obsidian-bg text-slate-100 font-body min-h-screen flex flex-col overflow-x-hidden selection:bg-primary selection:text-white">
+<body class="bg-bg text-t1 min-h-screen flex flex-col overflow-x-hidden selection:bg-primary selection:text-white">
 <Header/>
 <main class="flex-1 w-full flex flex-col items-center">
     <Hero/>
