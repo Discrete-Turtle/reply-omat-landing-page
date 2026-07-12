@@ -1,30 +1,105 @@
 ---
-import Logo from "../../public/logo.svg"
+import Logo from "./Logo.astro"
+
+type FooterLink = {
+  label: string
+  href: string
+}
+
+const footerLinks: FooterLink[] = [
+  { label: "Privacy Policy", href: "#" },
+  { label: "Terms of Service", href: "#" },
+  { label: "Contact", href: "#" },
+]
 ---
 
-<footer class="w-full border-t border-border-dark bg-background-dark/50 backdrop-blur-sm mt-20">
-    <div class="max-w-7xl mx-auto px-6 lg:px-10 py-12 flex flex-col md:flex-row justify-between items-center gap-8">
-        <div class="flex flex-col items-center md:items-start gap-4">
-            <div class="flex items-center gap-3">
-                <Logo />
-                <span class="text-white text-xl font-bold font-display tracking-tight">AI Review Response</span>
-            </div>
-            <p class="text-slate-400 text-sm max-w-xs text-center md:text-left">
-                Empowering businesses to build trust and grow through intelligent reputation management.
-            </p>
-        </div>
-        <div class="flex gap-8 text-sm text-slate-400">
-            <a class="hover:text-white transition-colors" href="#">Privacy Policy</a>
-            <a class="hover:text-white transition-colors" href="#">Terms of Service</a>
-            <a class="hover:text-white transition-colors" href="#">Contact</a>
-        </div>
-        <div>
-            <button class="bg-primary/10 hover:bg-primary/20 text-primary border border-primary/20 transition-colors text-sm font-bold px-5 py-2 rounded-full">
-                Get Early Access
-            </button>
-        </div>
-    </div>
-    <div class="max-w-7xl mx-auto px-6 lg:px-10 py-6 border-t border-border-dark flex justify-center md:justify-between items-center text-xs text-slate-600">
-        <p>© 2023 Automagic AI Inc. All rights reserved.</p>
-    </div>
+<footer class="ftr w-full">
+  <div class="ftr-inner mx-auto max-w-[1200px] px-5 min-[860px]:px-7">
+    <Logo size={22} />
+
+    <nav aria-label="Footer" class="ftr-links">
+      {footerLinks.map((link) => (
+        <a class="navlink" href={link.href}>{link.label}</a>
+      ))}
+    </nav>
+
+    <p class="ftr-copy">© 2026 ReplyOmat</p>
+  </div>
 </footer>
+
+<style>
+  .ftr {
+    border-top: 1px solid var(--b08);
+    padding: 34px 0;
+  }
+
+  .ftr-inner {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 20px;
+    text-align: center;
+  }
+  @media (min-width: 520px) {
+    .ftr-inner {
+      flex-direction: row;
+      justify-content: space-between;
+      text-align: left;
+    }
+  }
+
+  .ftr-links {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: center;
+    gap: 18px;
+  }
+  @media (min-width: 520px) {
+    .ftr-links {
+      gap: 26px;
+    }
+  }
+
+  .navlink {
+    position: relative;
+    padding: 4px 2px;
+    font: 600 14px var(--font-sans);
+    color: var(--t2);
+    border-radius: 4px;
+    transition: color 0.2s;
+  }
+  .navlink::after {
+    content: "";
+    position: absolute;
+    left: 0;
+    bottom: -1px;
+    width: 0;
+    height: 2px;
+    background: var(--primary);
+    transition: width 0.26s var(--ease-snap);
+  }
+  .navlink:hover {
+    color: var(--ink);
+  }
+  .navlink:hover::after {
+    width: 100%;
+  }
+  .navlink:focus-visible {
+    outline: 2px solid var(--primary);
+    outline-offset: 3px;
+  }
+
+  .ftr-copy {
+    margin: 0;
+    color: var(--t4);
+    font-size: 13px;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .navlink::after {
+      transition: none;
+    }
+  }
+</style>
