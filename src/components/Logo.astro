@@ -1,0 +1,48 @@
+---
+/**
+ * Brand mark + wordmark.
+ *
+ * Mark: two offset rounded bars (per docs/design-handoff README §Logo mark) —
+ * short `--star-off` bar top-left = review, wider `--primary` bar bottom-right = reply.
+ * Wordmark: "reply" in `--ink`, "omat" in `--primary`.
+ *
+ * Proportions match the design reference (docs/design-handoff/ReplyOmat Landing.dc.html,
+ * `.mark` rule): a 26x26 box with bars at top:14%/left:2%/62%x31% and
+ * bottom:14%/right:2%/76%x31%, radius 3px.
+ */
+export interface Props {
+    /** Mark size in pixels; the wordmark scales proportionally. */
+    size?: number;
+    class?: string;
+}
+
+const { size = 26, class: className = "" } = Astro.props;
+const wordmarkSize = Math.round(size * (19 / 26) * 100) / 100;
+---
+
+<a
+    href={import.meta.env.BASE_URL}
+    class:list={["inline-flex items-center gap-2.5", className]}
+    aria-label="ReplyOmat home"
+>
+    <span
+        class="relative inline-block shrink-0"
+        style={`width:${size}px;height:${size}px`}
+        aria-hidden="true"
+    >
+        <span
+            class="absolute rounded-[3px] bg-star-off"
+            style="top:14%;left:2%;width:62%;height:31%"
+        ></span>
+        <span
+            class="absolute rounded-[3px] bg-primary"
+            style="bottom:14%;right:2%;width:76%;height:31%"
+        ></span>
+    </span>
+    <span
+        class="font-sans font-extrabold tracking-[-0.01em] leading-none"
+        style={`font-size:${wordmarkSize}px`}
+    >
+        <span class="text-ink">reply</span><span class="text-primary">omat</span>
+    </span>
+</a>
