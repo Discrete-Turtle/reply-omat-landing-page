@@ -14,9 +14,129 @@
  * scrolls out of view or the tab is hidden, and resumed from the top when it
  * re-enters — a `running` guard means resume() never stacks a second chain
  * of timers on top of an existing one.
+ *
+ * Review rotation: REVIEWS holds ~10 demo entries (name/rating/meta/review/
+ * reply). REVIEWS[0] is rendered directly into the SSR markup below — it's
+ * both the reduced-motion end state and the first animated loop, so there's
+ * no visible jump when the script takes over. REVIEWS is then handed to the
+ * client script as inert JSON (a `<script type="application/json">` tag,
+ * parsed via `JSON.parse` at the top of the state-machine script) rather
+ * than via `define:vars`: `define:vars` skips Astro's normal esbuild/TS
+ * pass for that script tag and inlines it as literal source, which broke
+ * the existing TypeScript syntax below (`: number` annotations, `!`
+ * non-null assertions, `as HTMLElement` casts) at runtime in the browser.
+ * The JSON-tag approach keeps this script going through the same
+ * TS-stripping pipeline it always has. The state machine advances to the
+ * next entry (wrapping) once per full cycle, in phasePublished, right
+ * before the next phaseDrafting call.
  */
-const REPLY_TEXT =
-  "Thank you so much, Maria! The truffle mayo is our little obsession, so glad it won you over. See you next time!"
+interface ReviewEntry {
+  name: string
+  initial: string
+  rating: number
+  meta: string
+  review: string
+  reply: string
+}
+
+const REVIEWS: ReviewEntry[] = [
+  {
+    name: "Maria Sousa",
+    initial: "M",
+    rating: 5,
+    meta: "Local Guide · 2 days ago",
+    review: "Best fries in Porto! The truffle mayo is incredible and the staff were so friendly.",
+    reply:
+      "Thank you so much, Maria! The truffle mayo is our little obsession, so glad it won you over. See you next time!",
+  },
+  {
+    name: "James Whitfield",
+    initial: "J",
+    rating: 5,
+    meta: "4 days ago",
+    review: "Stumbled in after a long walk and left completely won over by the garlic aioli fries.",
+    reply: "Thanks so much, James! Garlic aioli really wins people over every time. Glad it hit the spot after your walk!",
+  },
+  {
+    name: "Tiago Rocha",
+    initial: "T",
+    rating: 5,
+    meta: "Local Guide · 6 days ago",
+    review: "Perfect after a night out, the peri-peri sauce is dangerously addictive stuff.",
+    reply: "Obrigado, Tiago! That peri-peri sauce truly has quite the reputation around here. See you again soon!",
+  },
+  {
+    name: "Emma Clarke",
+    initial: "E",
+    rating: 4,
+    meta: "1 week ago",
+    review: "Great fries and lovely staff, though we did wait longer than expected at lunchtime.",
+    reply: "Thanks, Emma! Sorry about the lunch wait, we're adding hands for peak hours. See you again soon!",
+  },
+  {
+    name: "Rui Almeida",
+    initial: "R",
+    rating: 5,
+    meta: "Local Guide · 1 week ago",
+    review: "Came in skeptical about truffle fries and left a fully converted regular. Amazing stuff.",
+    reply: "Conversion officially complete, Rui! Truffle fries do that to people every time. Thanks for the shot!",
+  },
+  {
+    name: "Sophie Lindqvist",
+    initial: "S",
+    rating: 5,
+    meta: "5 days ago",
+    review: "Cosy little spot near the river, the fries were crunchy and every sauce was fantastic.",
+    reply: "Thank you, Sophie! That riverside stroll pairs perfectly with our sauces. Come back anytime!",
+  },
+  {
+    name: "Ana Ferreira",
+    initial: "A",
+    rating: 3,
+    meta: "Local Guide · 3 days ago",
+    review: "Fries were good but service was slow and our order got mixed up with another table's.",
+    reply:
+      "So sorry, Ana — that mix-up isn't the experience we want. We're fixing our flow and would love another chance!",
+  },
+  {
+    name: "Marco Ferretti",
+    initial: "M",
+    rating: 5,
+    meta: "2 weeks ago",
+    review: "Best snack stop in Porto, hands down. The bacon cheddar fries are dangerously good.",
+    reply: "Dangerously good is exactly what we're going for, Marco! Thanks for stopping by, see you again!",
+  },
+  {
+    name: "Daniel O'Connor",
+    initial: "D",
+    rating: 4,
+    meta: "3 weeks ago",
+    review: "Solid fries and friendly service, just wish the portion sizes were a touch bigger.",
+    reply: "Thanks, Daniel! Noted on portion size, we're reviewing that now. Glad the visit was a good one!",
+  },
+  {
+    name: "Inês Pereira",
+    initial: "I",
+    rating: 5,
+    meta: "Local Guide · 4 days ago",
+    review: "Found this place by accident and it's now my go-to Porto snack stop. Love the house sauce.",
+    reply: "Happy accidents are the best kind, Inês! Thrilled the house sauce won you over. See you soon!",
+  },
+]
+
+// Split a rating into the exact gold/off glyph counts a rendered `.pc-stars`
+// row needs. Used both for the SSR markup below (REVIEWS[0]) and mirrored
+// in the client script (which can't import this — see the `define:vars`
+// note above) so both render identically.
+function starGlyphs(rating: number) {
+  return {
+    gold: "★".repeat(rating),
+    off: "★".repeat(5 - rating),
+  }
+}
+
+const firstReview = REVIEWS[0]
+const firstStars = starGlyphs(firstReview.rating)
 ---
 
 <section id="hero" class="relative w-full overflow-hidden" aria-label="Hero">
@@ -65,17 +185,17 @@ const REPLY_TEXT =
     <div class="relative">
       <div id="hero-card" class="product-card">
         <div class="flex items-center gap-3">
-          <div class="pc-avatar" aria-hidden="true">M</div>
-          <div class="flex-1">
-            <div class="pc-name">Maria Sousa</div>
-            <div class="pc-meta">Local Guide · 2 days ago</div>
+          <div class="pc-avatar" id="hero-avatar" aria-hidden="true">{firstReview.initial}</div>
+          <div class="flex-1 min-w-0">
+            <div class="pc-name" id="hero-name">{firstReview.name}</div>
+            <div class="pc-meta" id="hero-meta">{firstReview.meta}</div>
           </div>
-          <span class="sr-only">Rated 5 out of 5 stars.</span>
-          <span class="pc-stars" aria-hidden="true">★★★★★</span>
+          <span class="sr-only" id="hero-stars-sr">Rated {firstReview.rating} out of 5 stars.</span>
+          <span class="pc-stars" id="hero-stars" aria-hidden="true"><span class="pc-star-gold">{firstStars.gold}</span><span class="pc-star-off">{firstStars.off}</span></span>
         </div>
 
-        <p class="pc-review-text">
-          Best fries in Porto! The truffle mayo is incredible and the staff were so friendly.
+        <p class="pc-review-text" id="hero-review-text">
+          {firstReview.review}
         </p>
 
         <div class="pc-divider"></div>
@@ -89,7 +209,7 @@ const REPLY_TEXT =
 
           <div class="pc-reply-box">
             <p class="pc-reply-text">
-              <span id="hero-reply-typed">{REPLY_TEXT}</span><span class="pc-caret" id="hero-caret" hidden></span>
+              <span id="hero-reply-typed">{firstReview.reply}</span><span class="pc-caret" id="hero-caret" hidden></span>
             </p>
           </div>
 
@@ -97,18 +217,6 @@ const REPLY_TEXT =
             <button type="button" tabindex="-1" class="pc-approve">Approve &amp; publish</button>
             <button type="button" tabindex="-1" class="pc-edit">Edit</button>
           </div>
-        </div>
-      </div>
-
-      <div class="hero-chip hidden min-[860px]:flex">
-        <div class="chip-icon" aria-hidden="true">
-          <svg width="19" height="19" viewBox="0 0 24 24" fill="currentColor">
-            <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01z"></path>
-          </svg>
-        </div>
-        <div>
-          <div class="chip-title">Rated 4.8 on Google</div>
-          <div class="chip-sub">after replying to every review</div>
         </div>
       </div>
     </div>
@@ -252,18 +360,49 @@ const REPLY_TEXT =
     font: 700 16px var(--font-sans);
     flex-shrink: 0;
   }
+  /* .pc-name/.pc-meta are forced to a single line (nowrap + ellipsis,
+     needing `min-w-0` on the flex-1 wrapper above so the flex item can
+     actually shrink below its content width for overflow to kick in). This
+     isn't cosmetic: at the 320px breakpoint the name/meta column is only
+     ~83px wide, and letting either wrap would make its rendered line count
+     content-dependent — some reviewer names wrap to 2 lines while others'
+     "Local Guide · N days ago" meta wraps to 2 lines instead, and those two
+     wrap patterns don't sum to the same total height. Forcing exactly one
+     line each (truncating with an ellipsis if a given name/meta is too
+     long for the column) is what keeps the card's height identical across
+     all 10 rotating reviews. */
   .pc-name {
     font: 600 14.5px var(--font-sans);
     color: var(--ink);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
   }
   .pc-meta {
     font-size: 12px;
     color: var(--t3);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
   }
   .pc-stars {
-    color: var(--gold);
     letter-spacing: 2px;
     font-size: 15px;
+  }
+  /* :global() is required here: the gold/off glyph spans are re-rendered at
+     runtime via `starsEl.innerHTML = ...` each time the state machine
+     advances to the next review (see the script below), so they never
+     receive Astro's scoped `data-astro-cid-*` attribute. Declaring these
+     as scoped rules would compile to `.pc-star-gold[data-astro-cid-xxxx]`,
+     which matches the SSR-rendered first entry but silently stops matching
+     the moment JS replaces that markup — same failure mode already fixed
+     for `.pc-approve`/`.pc-edit`/`.pc-published` above. `:global()` matches
+     both the initial scoped spans and every runtime-injected replacement. */
+  :global(.pc-star-gold) {
+    color: var(--gold);
+  }
+  :global(.pc-star-off) {
+    color: var(--star-off);
   }
   .pc-review-text {
     margin: 14px 0 0;
@@ -309,6 +448,21 @@ const REPLY_TEXT =
     gap: 9px;
     margin-bottom: 11px;
   }
+  /* Flex items shrink by default. At 320px the row (mark + label + spinner)
+     is just wide enough that adding the spinner's width pushes the total
+     past the container width, and the browser satisfies that by shrinking
+     the label's box and wrapping its (uppercase, letter-spaced) text onto a
+     second line — only while the spinner is visible, i.e. only during the
+     first ~1.1s of every "Drafting a reply" phase. That silently doubled
+     this row's height for that brief window, a per-loop layout shift this
+     element (never re-created via innerHTML, so no :global() needed here)
+     must not have. `flex-shrink: 0` keeps it at its natural single-line
+     width regardless of what else is in the row.
+  */
+  #hero-reply-label {
+    white-space: nowrap;
+    flex-shrink: 0;
+  }
   .pc-spinner {
     width: 13px;
     height: 13px;
@@ -328,6 +482,20 @@ const REPLY_TEXT =
     border: 1px solid var(--b08);
     border-radius: 12px;
     padding: 14px 15px;
+  }
+  /* Below ~500px the card is narrow enough that a fully-typed 4-line reply
+     (measured against the longest of the 10 rotating entries) no longer
+     fits inside the 96px min-height used at wider widths — the box grows
+     once typing finishes, then shrinks back to 96px on the next "Drafting
+     a reply" phase (empty text), a small but real per-loop layout shift.
+     Raising min-height here keeps the box pinned at its tallest content
+     state across every phase and every rotating review at narrow widths,
+     matching the "no layout shift" invariant already relied on at wider
+     breakpoints (where 96px alone is already enough headroom). */
+  @media (max-width: 480px) {
+    .pc-reply-box {
+      min-height: 124px;
+    }
   }
   .pc-reply-text {
     margin: 0;
@@ -426,39 +594,6 @@ const REPLY_TEXT =
     flex-shrink: 0;
   }
 
-  .hero-chip {
-    position: absolute;
-    bottom: -26px;
-    right: -20px;
-    align-items: center;
-    gap: 11px;
-    background: var(--card);
-    border: 1px solid var(--b12);
-    border-radius: 14px;
-    padding: 12px 15px;
-    box-shadow: 0 18px 34px -22px rgba(34, 30, 25, .55);
-  }
-  .chip-icon {
-    width: 38px;
-    height: 38px;
-    border-radius: 50%;
-    background: var(--chip);
-    color: var(--gold);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    flex-shrink: 0;
-  }
-  .chip-title {
-    font: 700 14.5px var(--font-sans);
-    color: var(--ink);
-  }
-  .chip-sub {
-    font-size: 11.5px;
-    color: var(--t3);
-    margin-top: 1px;
-  }
-
   @media (prefers-reduced-motion: reduce) {
     .dot,
     .pc-spinner,
@@ -476,6 +611,7 @@ const REPLY_TEXT =
   }
 </style>
 
+<script type="application/json" id="hero-reviews-data" set:html={JSON.stringify(REVIEWS)}></script>
 <script>
   ;(function () {
     const card = document.getElementById("hero-card")
@@ -484,15 +620,77 @@ const REPLY_TEXT =
     const typedEl = document.getElementById("hero-reply-typed")
     const caretEl = document.getElementById("hero-caret")
     const actionRow = document.getElementById("hero-action-row")
-    if (!card || !labelEl || !spinnerEl || !typedEl || !caretEl || !actionRow) return
+    const avatarEl = document.getElementById("hero-avatar")
+    const nameEl = document.getElementById("hero-name")
+    const metaEl = document.getElementById("hero-meta")
+    const starsEl = document.getElementById("hero-stars")
+    const starsSrEl = document.getElementById("hero-stars-sr")
+    const reviewTextEl = document.getElementById("hero-review-text")
+    const reviewsDataEl = document.getElementById("hero-reviews-data")
+    if (
+      !card ||
+      !labelEl ||
+      !spinnerEl ||
+      !typedEl ||
+      !caretEl ||
+      !actionRow ||
+      !avatarEl ||
+      !nameEl ||
+      !metaEl ||
+      !starsEl ||
+      !starsSrEl ||
+      !reviewTextEl ||
+      !reviewsDataEl
+    )
+      return
 
     // The markup already renders this exact reduced-motion end state, so
     // there is nothing left to do when motion is disabled.
     if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return
 
-    // Read the reply text from the server-rendered markup (single source of
-    // truth) instead of duplicating the copy here.
-    const REPLY = typedEl.textContent || ""
+    type ReviewEntry = {
+      initial: string
+      name: string
+      meta: string
+      rating: number
+      review: string
+      reply: string
+    }
+
+    // Parsed from the inert JSON <script> tag above (see the frontmatter
+    // doc comment for why it isn't passed via `define:vars`).
+    const REVIEWS: ReviewEntry[] = JSON.parse(reviewsDataEl.textContent || "[]")
+
+    // REVIEWS[0] is already rendered into the SSR markup (avatar/name/meta/
+    // stars/review text/reply), so the index starts at 0 to match it exactly
+    // — the first animated loop is visually identical to the static
+    // fallback. `reviewIndex` advances (wrapping) once per full cycle, in
+    // phasePublished, right before the next phaseDrafting call. REPLY is a
+    // `let`, not the original `const` read once from the DOM, because it
+    // now changes every cycle along with the rest of the review.
+    let reviewIndex = 0
+    let REPLY = REVIEWS[reviewIndex].reply
+
+    // Mirrors the `starGlyphs()` helper in the frontmatter above (that
+    // helper only runs at build time; this runtime copy is what re-renders
+    // `.pc-stars` — via innerHTML, hence :global() on the CSS side — every
+    // time the state machine moves to the next review).
+    function starsMarkup(rating: number) {
+      return (
+        `<span class="pc-star-gold">${"★".repeat(rating)}</span>` +
+        `<span class="pc-star-off">${"★".repeat(5 - rating)}</span>`
+      )
+    }
+
+    function applyReview(entry: ReviewEntry) {
+      avatarEl!.textContent = entry.initial
+      nameEl!.textContent = entry.name
+      metaEl!.textContent = entry.meta
+      starsSrEl!.textContent = `Rated ${entry.rating} out of 5 stars.`
+      starsEl!.innerHTML = starsMarkup(entry.rating)
+      reviewTextEl!.textContent = entry.review
+      REPLY = entry.reply
+    }
 
     // Same idea for the draft action buttons: the SSR markup (lines 96-99)
     // already renders the exact "Approve & publish" / "Edit" buttons this
@@ -536,6 +734,11 @@ const REPLY_TEXT =
     }
 
     function phaseDrafting() {
+      // Show the review this cycle is drafting a reply for. On the very
+      // first call this re-applies REVIEWS[0] (already on screen from SSR,
+      // so it's a no-op visually); every subsequent call applies whichever
+      // entry phasePublished advanced `reviewIndex` to.
+      applyReview(REVIEWS[reviewIndex])
       labelEl!.textContent = "Drafting a reply"
       ;(spinnerEl as HTMLElement).hidden = false
       ;(caretEl as HTMLElement).hidden = true
@@ -571,6 +774,11 @@ const REPLY_TEXT =
 
     function phasePublished() {
       actionRow!.innerHTML = PUBLISHED_CONFIRMATION
+      // Advance to the next review now, before the hold — so the *next*
+      // phaseDrafting() call (single chained timer, no second timer added)
+      // picks up REVIEWS[reviewIndex + 1], wrapping back to 0 after the
+      // last entry.
+      reviewIndex = (reviewIndex + 1) % REVIEWS.length
       after(PUBLISHED_HOLD_MS, phaseDrafting)
     }
 
