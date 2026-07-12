@@ -1,0 +1,118 @@
+---
+/**
+ * CTA band — full-width rounded panel (§6 of the design handoff).
+ *
+ * The gradient is a FIXED terracotta gradient — hardcoded hex stops, not
+ * `--ink`/`--primary` tokens — so it reads identically in light and dark
+ * mode. The cream button (`#fffdf9` / `#a5542f`) is the same kind of
+ * deliberate one-off: it exists only for contrast against this gradient and
+ * isn't part of the clay token set (see the avatar swatch note in
+ * Hero.astro for the same pattern).
+ *
+ * `.reveal` fades+rises in once via IntersectionObserver — see
+ * Features.astro for the same pattern. The two ripple rings reuse the
+ * global `.ripple-ring` keyframes with a white-tint border color scoped to
+ * this component.
+ */
+---
+
+<section class="w-full pb-16 min-[860px]:pb-[74px]">
+  <div class="mx-auto max-w-[1200px] px-5 min-[860px]:px-7">
+    <div class="band reveal relative overflow-hidden rounded-[22px] text-center px-6 py-12 min-[520px]:px-10 min-[520px]:py-14">
+      <div class="absolute top-1/2 left-1/2 pointer-events-none" aria-hidden="true">
+        <span class="ripple-ring band-ring"></span>
+        <span class="ripple-ring band-ring band-ring-d1"></span>
+      </div>
+
+      <h2 class="band-title relative text-[clamp(28px,3.4vw,40px)] mb-[14px]">
+        Stop dreading your reviews.
+      </h2>
+      <p class="band-sub relative mx-auto mb-[26px] max-w-[440px] text-[16.5px]">
+        Join the beta and let every reply sound like you, without the busywork.
+      </p>
+      <button type="button" class="band-btn relative">
+        Get Early Access
+      </button>
+    </div>
+  </div>
+</section>
+
+<style>
+  .band {
+    background: linear-gradient(135deg, #c2693f 0%, #a5542f 58%, #8f4a2c 100%);
+  }
+
+  .band-ring {
+    border-color: rgba(255, 255, 255, 0.4);
+  }
+  .band-ring-d1 {
+    animation-delay: 3.5s;
+  }
+
+  .band-title {
+    font-family: var(--font-display);
+    color: #fff;
+  }
+  .band-sub {
+    margin-left: auto;
+    margin-right: auto;
+    /* Bumped from the reference's .85 alpha to .92 — measured against the
+       rendered gradient this subtext sits on, .85 dipped to ~4.2:1 (fails
+       AA for 16.5px regular text); .92 holds >=4.5:1 across the gradient. */
+    color: rgba(255, 255, 255, 0.92);
+  }
+
+  .band-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 9px;
+    border: none;
+    background: #fffdf9;
+    color: #a5542f;
+    font: 700 15px var(--font-sans);
+    padding: 14px 24px;
+    border-radius: 11px;
+    cursor: pointer;
+    box-shadow: 0 10px 24px -10px rgba(0, 0, 0, 0.45);
+    transition: transform 0.26s var(--ease-snap);
+  }
+  .band-btn:hover {
+    transform: translateY(-2px);
+  }
+  .band-btn:focus-visible {
+    outline: 2px solid #fffdf9;
+    outline-offset: 3px;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .band-btn {
+      transition: none;
+    }
+    .band-btn:hover {
+      transform: none;
+    }
+  }
+</style>
+
+<script>
+  ;(function () {
+    const roots = document.querySelectorAll<HTMLElement>(".band.reveal")
+    if (!roots.length) return
+
+    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return
+
+    const observer = new IntersectionObserver(
+      (entries, obs) => {
+        entries.forEach((entry) => {
+          if (entry.isIntersecting) {
+            entry.target.classList.add("in")
+            obs.unobserve(entry.target)
+          }
+        })
+      },
+      { threshold: 0.15 }
+    )
+    roots.forEach((el) => observer.observe(el))
+  })()
+</script>
