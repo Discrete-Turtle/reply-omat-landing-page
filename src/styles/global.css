@@ -124,6 +124,8 @@
 
 .ripple-ring {
     position: absolute;
+    width: 1100px;
+    height: 1100px;
     border: 1.5px solid var(--primary);
     border-radius: 50%;
     opacity: 0;
@@ -133,14 +135,12 @@
 
 @keyframes ripple-ring-anim {
     0% {
-        width: 180px;
-        height: 180px;
         opacity: .22;
+        transform: translate(-50%, -50%) scale(0.164);
     }
     100% {
-        width: 1100px;
-        height: 1100px;
         opacity: 0;
+        transform: translate(-50%, -50%) scale(1);
     }
 }
 
