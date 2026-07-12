@@ -34,7 +34,9 @@ const REPLY_TEXT =
       </div>
 
       <h1 class="text-ink text-[clamp(38px,5.4vw,66px)] mb-[22px]">
-        Your reviews, answered in your voice.
+        Your reviews, answered <em class="accent-voice">in your <span class="accent-underline">voice.<svg class="swash" viewBox="0 0 120 16" preserveAspectRatio="none" aria-hidden="true" focusable="false">
+          <path d="M4 10 Q 35 3 62 8 T 116 6"></path>
+        </svg></span></em>
       </h1>
 
       <p class="mb-8 max-w-[480px] text-t2 text-[clamp(16px,1.4vw,19px)] leading-[1.6]">
@@ -114,6 +116,57 @@ const REPLY_TEXT =
 </section>
 
 <style>
+  /* Headline accent — "voice." carries the italic Fraunces treatment (the
+     surrounding <em> gives the whole clause the italic style; italic never
+     affects line-wrapping) plus a hand-drawn gold swash underneath. The
+     swash lives on the single word "voice." specifically — not the full
+     three-word clause — because at the tested breakpoints (320–1440px) the
+     headline wraps that clause differently at every width (sometimes
+     "your voice." shares a line, sometimes "voice." sits alone); a single
+     word never itself splits across a line-break, so it's the only anchor
+     that can host a correctly-sized underline at every width without
+     touching the sentence's existing wrap points.
+   */
+  .accent-voice {
+    font-style: italic;
+  }
+  .accent-underline {
+    position: relative;
+    display: inline-block;
+  }
+  .accent-underline .swash {
+    position: absolute;
+    left: 0;
+    top: 100%;
+    width: 100%;
+    height: 13px;
+    overflow: visible;
+  }
+  .accent-underline .swash path {
+    fill: none;
+    stroke: var(--gold);
+    stroke-width: 3;
+    stroke-linecap: round;
+  }
+  /* No JS / no motion: the path above renders fully drawn, statically —
+     nothing to gate. With JS, it starts hidden and draws in once on load. */
+  html.js .accent-underline .swash path {
+    stroke-dasharray: 114;
+    stroke-dashoffset: 114;
+    animation: swash-draw .9s var(--ease-snap) .5s forwards;
+  }
+  @keyframes swash-draw {
+    to {
+      stroke-dashoffset: 0;
+    }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    html.js .accent-underline .swash path {
+      animation: none;
+      stroke-dashoffset: 0;
+    }
+  }
+
   .badge {
     display: inline-flex;
     align-items: center;
@@ -159,11 +212,6 @@ const REPLY_TEXT =
     background: var(--primary-h);
     transform: translateY(-2px);
   }
-  .btn-primary:focus-visible {
-    outline: 2px solid var(--ink);
-    outline-offset: 2px;
-  }
-
   .btn-ghost {
     display: inline-flex;
     align-items: center;
@@ -180,10 +228,6 @@ const REPLY_TEXT =
   .btn-ghost:hover {
     background: var(--hover);
     border-color: var(--b28);
-  }
-  .btn-ghost:focus-visible {
-    outline: 2px solid var(--primary);
-    outline-offset: 2px;
   }
 
   .product-card {
@@ -331,10 +375,6 @@ const REPLY_TEXT =
   .pc-approve:hover {
     background: var(--primary-h);
     transform: translateY(-2px);
-  }
-  .pc-approve:focus-visible {
-    outline: 2px solid var(--ink);
-    outline-offset: 2px;
   }
   .pc-edit {
     display: inline-flex;

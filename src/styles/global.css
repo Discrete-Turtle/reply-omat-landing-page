@@ -1,4 +1,4 @@
-@import url("https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400..700&family=Hanken+Grotesk:wght@400..800&family=Spline+Sans+Mono:wght@500;600&display=swap");
+@import url("https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400..700;1,9..144,400..700&family=Hanken+Grotesk:wght@400..800&family=Spline+Sans+Mono:wght@500;600&display=swap");
 @import "tailwindcss";
 @import "tw-animate-css";
 @import "shadcn/tailwind.css";
@@ -165,4 +165,38 @@ html.js .reveal.in {
         opacity: 1;
         transform: none;
     }
+}
+
+/* Chip-toned text selection — same pair used for the "invite-only" badge,
+   so highlighting text feels like part of the clay system, not a browser
+   default. --chip/--accent-tx already flip per theme via :root/.dark. */
+::selection {
+    background: var(--chip);
+    color: var(--accent-tx);
+}
+
+/* Paper grain — a quiet inline-SVG turbulence overlay for the two flattest
+   bands on the page (how-it-works board, CTA panel). Grayscale noise run
+   through feComponentTransfer to compress it into a narrow mid-gray band
+   (roughly 0.32–0.67 of full range) before the opacity is applied, so a
+   stray "bright" grain pixel can never approach true white — this keeps the
+   CTA subtext's worst-case contrast safe even directly behind the noise.
+   Host element needs `position: relative` (or already has it); this fills
+   it via inset:0 and never intercepts pointer events. */
+.grain {
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    opacity: .035;
+    background-repeat: repeat;
+    background-size: 200px 200px;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='200' height='200'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='3' stitchTiles='stitch' result='t'/%3E%3CfeColorMatrix in='t' type='saturate' values='0' result='g'/%3E%3CfeComponentTransfer in='g'%3E%3CfeFuncR type='linear' slope='0.35' intercept='0.32'/%3E%3CfeFuncG type='linear' slope='0.35' intercept='0.32'/%3E%3CfeFuncB type='linear' slope='0.35' intercept='0.32'/%3E%3C/feComponentTransfer%3E%3C/filter%3E%3Crect width='200' height='200' filter='url(%23n)'/%3E%3C/svg%3E");
+}
+
+/* One coherent focus system, page-wide: 2px --primary ring, 2px offset.
+   The gradient CTA band overrides this locally with a cream ring (its own
+   background makes a terracotta ring unreadable) — see CtaBand.astro. */
+:focus-visible {
+    outline: 2px solid var(--primary);
+    outline-offset: 2px;
 }
