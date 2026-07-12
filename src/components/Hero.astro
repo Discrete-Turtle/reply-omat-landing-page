@@ -393,7 +393,15 @@ const REPLY_TEXT =
     background: var(--hover);
     border-color: var(--b28);
   }
-  .pc-published {
+  /* :global() is required here: this markup is injected at runtime via
+     `actionRow.innerHTML = PUBLISHED_CONFIRMATION` in the state-machine
+     script below, so the element never receives Astro's scoped
+     `data-astro-cid-*` attribute. A plain scoped `.pc-published { ... }`
+     rule compiles to `.pc-published[data-astro-cid-xxxx] { ... }`, which
+     silently never matches the dynamically-created div — it falls back to
+     the SVG/text default block flow, stacking the check icon above the
+     label instead of sitting inline with it. */
+  :global(.pc-published) {
     flex: 1;
     display: flex;
     align-items: center;
@@ -403,6 +411,9 @@ const REPLY_TEXT =
     border-radius: 10px;
     padding: 11px 14px;
     font: 600 13.5px var(--font-sans);
+  }
+  :global(.pc-published svg) {
+    flex-shrink: 0;
   }
 
   .hero-chip {
