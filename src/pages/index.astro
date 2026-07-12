@@ -29,6 +29,7 @@ import Footer from '@/components/Footer.astro'
     <meta name="twitter:description" content="AI drafts on-brand replies to your Google reviews; you approve, it publishes to Google."/>
     <script is:inline>
         (function () {
+            document.documentElement.classList.add('js');
             var stored = null;
             try {
                 stored = localStorage.getItem('theme');

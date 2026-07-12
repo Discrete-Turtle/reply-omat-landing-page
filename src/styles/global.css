@@ -144,13 +144,13 @@
     }
 }
 
-.reveal {
+html.js .reveal {
     opacity: 0;
     transform: translateY(22px);
     transition: opacity .26s var(--ease-snap), transform .26s var(--ease-snap);
 }
 
-.reveal.in {
+html.js .reveal.in {
     opacity: 1;
     transform: none;
 }
@@ -160,7 +160,7 @@
         animation: none;
     }
 
-    .reveal {
+    html.js .reveal {
         transition: none;
         opacity: 1;
         transform: none;
