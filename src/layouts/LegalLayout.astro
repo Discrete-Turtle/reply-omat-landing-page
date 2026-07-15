@@ -1,0 +1,273 @@
+---
+import '../styles/global.css'
+
+import Header from '@/components/Header.astro'
+import Footer from '@/components/Footer.astro'
+
+// Markdown/MDX pages that set `layout:` in frontmatter receive every
+// frontmatter field under Astro.props.frontmatter (plus url/file/headings/etc).
+// title/description/path are required per-page metadata for the <head>.
+const { frontmatter } = Astro.props
+
+for (const field of ['path', 'title', 'description']) {
+    if (!frontmatter?.[field]) {
+        throw new Error(`LegalLayout: missing required frontmatter field "${field}" in ${frontmatter?.path ?? Astro.props.url ?? 'unknown page'}`)
+    }
+}
+
+const canonicalUrl = new URL(frontmatter.path, Astro.site).href
+---
+
+<html lang="en">
+<head>
+    <meta charset="utf-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1"/>
+    <link rel="icon" type="image/svg+xml" href={`${import.meta.env.BASE_URL}favicon.svg`}/>
+    <link rel="icon" href={`${import.meta.env.BASE_URL}favicon.ico`}/>
+    <link rel="apple-touch-icon" href={`${import.meta.env.BASE_URL}apple-touch-icon.png`}/>
+    <meta name="generator" content={Astro.generator}/>
+    <title>{frontmatter.title}</title>
+    <meta name="description" content={frontmatter.description}/>
+    <link rel="canonical" href={canonicalUrl}/>
+    <meta property="og:title" content={frontmatter.title}/>
+    <meta property="og:description" content={frontmatter.description}/>
+    <meta property="og:url" content={canonicalUrl}/>
+    <meta property="og:type" content="website"/>
+    <meta name="twitter:card" content="summary"/>
+    <meta name="twitter:title" content={frontmatter.title}/>
+    <meta name="twitter:description" content={frontmatter.description}/>
+    <script is:inline>
+        (function () {
+            document.documentElement.classList.add('js');
+            var stored = null;
+            try {
+                stored = localStorage.getItem('theme');
+            } catch (e) {}
+            var dark = stored ? stored === 'dark' : window.matchMedia('(prefers-color-scheme: dark)').matches;
+            document.documentElement.classList.toggle('dark', dark);
+
+            window.__setTheme = function (isDark) {
+                document.documentElement.classList.toggle('dark', isDark);
+                try {
+                    localStorage.setItem('theme', isDark ? 'dark' : 'light');
+                } catch (e) {}
+            };
+        })();
+    </script>
+</head>
+<body class="bg-bg text-t1 min-h-screen flex flex-col overflow-x-hidden">
+<Header/>
+<main class="flex-1 w-full flex flex-col items-center">
+    <article class="legal-article">
+        <slot/>
+    </article>
+    <Footer/>
+</main>
+</body>
+</html>
+
+<style>
+    .legal-article {
+        width: 100%;
+        max-width: 70ch;
+        margin: 0 auto;
+        padding: 72px 20px 104px;
+    }
+
+    @media (min-width: 640px) {
+        .legal-article {
+            padding: 96px 24px 120px;
+        }
+    }
+
+    /* First heading (the page's h1) sits directly under the header, so it
+       carries the display treatment used elsewhere on the site. */
+    .legal-article :global(h1) {
+        font-size: clamp(2rem, 1.65rem + 1.4vw, 2.6rem);
+        color: var(--ink);
+        margin: 0 0 6px;
+    }
+
+    .legal-article :global(.legal-meta) {
+        color: var(--t3);
+        font: 600 14px var(--font-eyebrow);
+        letter-spacing: 0.02em;
+        margin: 0 0 40px;
+        line-height: 1.7;
+    }
+
+    .legal-article :global(h2) {
+        font-size: clamp(1.3rem, 1.15rem + 0.6vw, 1.55rem);
+        color: var(--ink);
+        margin: 52px 0 16px;
+        padding-top: 24px;
+        border-top: 1px solid var(--b08);
+    }
+
+    .legal-article :global(h1 ~ h2:first-of-type) {
+        border-top: none;
+        padding-top: 0;
+        margin-top: 8px;
+    }
+
+    .legal-article :global(h3) {
+        font-size: 1.08rem;
+        color: var(--ink);
+        margin: 28px 0 12px;
+    }
+
+    .legal-article :global(p) {
+        margin: 0 0 18px;
+        line-height: 1.7;
+        color: var(--t1);
+    }
+
+    .legal-article :global(ul),
+    .legal-article :global(ol) {
+        margin: 0 0 20px;
+        padding-left: 1.3em;
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+    }
+
+    .legal-article :global(li) {
+        line-height: 1.65;
+        color: var(--t1);
+    }
+
+    .legal-article :global(li > ul),
+    .legal-article :global(li > ol) {
+        margin: 10px 0 0;
+    }
+
+    .legal-article :global(strong) {
+        color: var(--ink);
+        font-weight: 700;
+    }
+
+    .legal-article :global(a) {
+        color: var(--accent-tx);
+        text-decoration: underline;
+        text-underline-offset: 2px;
+        text-decoration-color: var(--chip-bd);
+        transition: text-decoration-color 0.2s, color 0.2s;
+    }
+
+    .legal-article :global(a:hover) {
+        color: var(--primary);
+        text-decoration-color: var(--primary);
+    }
+
+    .legal-article :global(a:focus-visible) {
+        outline: 2px solid var(--primary);
+        outline-offset: 2px;
+        border-radius: 3px;
+    }
+
+    .legal-article :global(code) {
+        font-family: var(--font-eyebrow);
+        font-size: 0.86em;
+        background: var(--chip);
+        color: var(--accent-tx);
+        border: 1px solid var(--chip-bd);
+        border-radius: 5px;
+        padding: 0.15em 0.4em;
+    }
+
+    .legal-article :global(blockquote) {
+        margin: 0 0 24px;
+        padding: 4px 0 4px 20px;
+        border-left: 3px solid var(--primary);
+        color: var(--t2);
+        font-style: italic;
+    }
+
+    .legal-article :global(blockquote p:last-child) {
+        margin-bottom: 0;
+    }
+
+    .legal-article :global(hr) {
+        border: none;
+        border-top: 1px solid var(--b08);
+        margin: 40px 0;
+    }
+
+    /* Tables carry rows of definitions (operator details, retention windows,
+       OAuth scopes): a bordered card reads as a native part of the site
+       rather than a raw markdown table dump. */
+    .legal-article :global(table) {
+        width: 100%;
+        margin: 0 0 24px;
+        border-collapse: separate;
+        border-spacing: 0;
+        font-size: 0.94rem;
+        line-height: 1.55;
+        background: var(--card);
+        border: 1px solid var(--b08);
+        border-radius: 12px;
+        overflow: hidden;
+    }
+
+    .legal-article :global(th),
+    .legal-article :global(td) {
+        padding: 12px 16px;
+        text-align: left;
+        vertical-align: top;
+        border-bottom: 1px solid var(--b08);
+    }
+
+    .legal-article :global(tr:last-child th),
+    .legal-article :global(tr:last-child td) {
+        border-bottom: none;
+    }
+
+    .legal-article :global(thead th) {
+        font: 700 12px var(--font-eyebrow);
+        text-transform: uppercase;
+        letter-spacing: 0.08em;
+        color: var(--t3);
+        background: var(--inset);
+    }
+
+    .legal-article :global(td:first-child),
+    .legal-article :global(th:first-child) {
+        color: var(--t2);
+        font-weight: 600;
+        width: 34%;
+    }
+
+    @media (max-width: 640px) {
+        .legal-article :global(table),
+        .legal-article :global(thead),
+        .legal-article :global(tbody),
+        .legal-article :global(th),
+        .legal-article :global(td),
+        .legal-article :global(tr) {
+            display: block;
+        }
+
+        .legal-article :global(thead) {
+            display: none;
+        }
+
+        .legal-article :global(tr) {
+            border-bottom: 1px solid var(--b08);
+            padding: 10px 16px;
+        }
+
+        .legal-article :global(tr:last-child) {
+            border-bottom: none;
+        }
+
+        .legal-article :global(td) {
+            border-bottom: none;
+            padding: 4px 0;
+            width: auto;
+        }
+
+        .legal-article :global(td:first-child) {
+            padding-top: 8px;
+        }
+    }
+</style>
