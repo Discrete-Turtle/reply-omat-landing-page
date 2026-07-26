@@ -11,9 +11,6 @@
  */
 import * as z from "zod/mini"
 
-// Kept identical to the original hand-rolled check so behaviour is unchanged.
-const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
-
 // Allowed segmented-picker values. "" is permitted (source's "Choose one"
 // default, and a defensive allowance for locations). The location buckets
 // align with the landing pricing tiers — 1 (Starter) / 2-3 (Yearly, ≤3) /
@@ -31,7 +28,7 @@ export const waitlistSchema = z.object({
       z.trim(),
       z.toLowerCase(),
       z.maxLength(254),
-      z.regex(EMAIL_RE, "Enter a valid email address.")
+      z.email("Enter a valid email address.")
     ),
   business: z
     .string()
