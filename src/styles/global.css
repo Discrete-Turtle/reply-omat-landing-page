@@ -66,6 +66,7 @@
     --ok-bg: #e7f0e9;
     --gold: #e0a82e;
     --star-off: #ddd5c8;
+    --err: #b4452f;
     /* borders are alpha-ink, not gray */
     --b06: rgba(34, 30, 25, .06);
     --b08: rgba(34, 30, 25, .08);
@@ -97,6 +98,7 @@
     --ok-bg: #26352c;
     --gold: #e0a82e;
     --star-off: #4a443a;
+    --err: #ee9d87;
     --b06: rgba(255, 255, 255, .07);
     --b08: rgba(255, 255, 255, .09);
     --b12: rgba(255, 255, 255, .13);

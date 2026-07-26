@@ -1,0 +1,545 @@
+---
+/**
+ * WaitlistForm — right column of /waitlist. Two cards in one component:
+ * the request form (#wl-form-card) and the success state (#wl-success-card,
+ * hidden until submit succeeds). Static markup here; the interactive island
+ * (validation, submit → /api/waitlist, success swap, focus) is added in a
+ * scoped <script> (Task 4). Native radio inputs give the segmented pickers
+ * real keyboard/SR behaviour; the pill look is CSS via `:has(input:checked)`.
+ */
+---
+
+<div id="wl-form-card" class="card form-card">
+  <div class="card-title">Request an invite</div>
+  <div class="card-hint">Takes under a minute. We'll only email you about your invite.</div>
+
+  <form id="wl-form" class="form-body" novalidate>
+    <!-- honeypot: off-screen, never shown, bots fill it -->
+    <div class="hp" aria-hidden="true">
+      <label>Company website
+        <input type="text" name="company_website" tabindex="-1" autocomplete="off"/>
+      </label>
+    </div>
+
+    <div class="two">
+      <div class="field">
+        <label class="flabel" for="wl-name">Your name <span class="req">*</span></label>
+        <input class="inp" id="wl-name" name="name" type="text" placeholder="Sofia Marques" autocomplete="name" maxlength="200"/>
+        <span class="err" id="err-name" hidden>Please tell us your name.</span>
+      </div>
+      <div class="field">
+        <label class="flabel" for="wl-email">Work email <span class="req">*</span></label>
+        <input class="inp" id="wl-email" name="email" type="email" placeholder="you@yourplace.com" autocomplete="email" maxlength="254"/>
+        <span class="err" id="err-email" hidden>Enter a valid email address.</span>
+      </div>
+    </div>
+
+    <div class="field">
+      <label class="flabel" for="wl-business">Business name <span class="req">*</span></label>
+      <input class="inp" id="wl-business" name="business" type="text" placeholder="French Fries Factory" autocomplete="organization" maxlength="200"/>
+      <span class="err" id="err-business" hidden>Please tell us your business name.</span>
+    </div>
+
+    <div class="field">
+      <label class="flabel" for="wl-maps">Google Maps link <span class="opt">(optional)</span></label>
+      <input class="inp" id="wl-maps" name="maps_url" type="url" placeholder="maps.google.com/…" autocomplete="off" maxlength="2048"/>
+      <span class="hint">Speeds up your setup. We use it to find your reviews.</span>
+    </div>
+
+    <div class="field">
+      <span class="flabel" id="wl-loc-label">How many locations?</span>
+      <div class="segs" role="radiogroup" aria-labelledby="wl-loc-label">
+        <label class="seg"><input type="radio" name="locations" value="1" checked/><span>1</span></label>
+        <label class="seg"><input type="radio" name="locations" value="2-3"/><span>2 to 3</span></label>
+        <label class="seg"><input type="radio" name="locations" value="4-5"/><span>4 to 5</span></label>
+        <label class="seg"><input type="radio" name="locations" value="6+"/><span>6 or more</span></label>
+      </div>
+    </div>
+
+    <div class="field">
+      <label class="flabel" for="wl-source">How did you hear about us?</label>
+      <select class="inp" id="wl-source" name="source">
+        <option value="">Choose one</option>
+        <option value="search">Google search</option>
+        <option value="social">Social media</option>
+        <option value="friend">A friend or colleague</option>
+        <option value="event">An event or meetup</option>
+        <option value="other">Somewhere else</option>
+      </select>
+    </div>
+
+    <label class="check" for="wl-consent">
+      <input type="checkbox" id="wl-consent" name="consent" class="cbox-input"/>
+      <span class="cbox" aria-hidden="true">
+        <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"></path></svg>
+      </span>
+      <span class="check-text">Also email me product updates and occasional tips. Optional — I can unsubscribe any time. See the <a href="/privacy">Privacy Policy</a>.</span>
+    </label>
+
+    <span class="err wl-general" id="wl-error" role="alert" hidden>Something went wrong — please try again.</span>
+
+    <button type="submit" class="btn-p" id="wl-submit">
+      <span class="wl-send-default">Request an invite
+        <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14M12 5l7 7-7 7"></path></svg>
+      </span>
+      <span class="wl-send-loading" hidden><span class="spin"></span> Sending…</span>
+    </button>
+  </form>
+</div>
+
+<div id="wl-success-card" class="card success-card" hidden>
+  <div class="ok-circle">
+    <svg viewBox="0 0 24 24" width="36" height="36" fill="none" stroke="var(--ok)" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"></path></svg>
+  </div>
+  <h2 class="done-h" id="wl-done-heading" role="status" tabindex="-1">You're on the list.</h2>
+  <p class="done-p">Thanks <span id="wl-done-name"></span>. We'll email <b id="wl-done-email"></b> as soon as a spot opens up, usually within a week.</p>
+  <div class="next">
+    <div class="eyebrow next-title">What happens next</div>
+    <div class="next-lines">
+      <div class="next-line"><span class="next-num">1.</span>We check your Google listing is connectable.</div>
+      <div class="next-line"><span class="next-num">2.</span>You get an invite link and a short setup call.</div>
+      <div class="next-line"><span class="next-num">3.</span>Your first drafts are waiting the same day.</div>
+    </div>
+  </div>
+  <a class="btn-g" href="/">Back to replyomat.ai</a>
+</div>
+
+<style>
+  .card {
+    background: var(--card);
+    border: 1px solid var(--b08);
+    border-radius: 20px;
+    box-shadow: 0 40px 80px -46px rgba(34, 30, 25, .5);
+  }
+  .form-card {
+    padding: 30px;
+  }
+  .card-title {
+    font: 700 19px var(--font-sans);
+    color: var(--ink);
+    margin-bottom: 5px;
+  }
+  .card-hint {
+    font: 400 12.5px var(--font-sans);
+    color: var(--t4);
+    line-height: 1.5;
+    margin-bottom: 24px;
+  }
+  .form-body {
+    display: flex;
+    flex-direction: column;
+    gap: 18px;
+  }
+  .two {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 14px;
+  }
+  .field {
+    display: flex;
+    flex-direction: column;
+    gap: 7px;
+  }
+  .flabel {
+    font: 600 13px var(--font-sans);
+    color: var(--t2);
+  }
+  .req { color: var(--primary); }
+  .opt { color: var(--t4); font-weight: 500; }
+
+  .inp {
+    width: 100%;
+    border: 1px solid var(--b12);
+    background: var(--inset);
+    border-radius: 11px;
+    padding: 13px 14px;
+    font: 400 15px var(--font-sans);
+    color: var(--ink);
+    outline: none;
+    transition: border-color .18s, background .18s;
+  }
+  .inp:focus {
+    border-color: var(--primary);
+    background: var(--card);
+  }
+  .inp::placeholder { color: var(--t4); }
+  .inp.bad {
+    border-color: var(--err);
+    background: color-mix(in srgb, var(--err) 7%, var(--inset));
+  }
+  select.inp {
+    appearance: none;
+    cursor: pointer;
+    background-image:
+      linear-gradient(45deg, transparent 50%, var(--t3) 50%),
+      linear-gradient(135deg, var(--t3) 50%, transparent 50%);
+    background-position: calc(100% - 18px) 21px, calc(100% - 13px) 21px;
+    background-size: 5px 5px, 5px 5px;
+    background-repeat: no-repeat;
+  }
+  .err {
+    font: 500 12.5px var(--font-sans);
+    color: var(--err);
+  }
+  .wl-general { margin-top: -6px; }
+  .hint {
+    font: 400 12.5px var(--font-sans);
+    color: var(--t4);
+    line-height: 1.5;
+  }
+
+  .segs {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+  }
+  .seg {
+    font: 600 13.5px var(--font-sans);
+    padding: 10px 16px;
+    border-radius: 99px;
+    border: 1px solid var(--b12);
+    background: var(--inset);
+    color: var(--t2);
+    cursor: pointer;
+    transition: border-color .16s, background .16s, color .16s;
+  }
+  .seg input {
+    position: absolute;
+    opacity: 0;
+    width: 0;
+    height: 0;
+  }
+  .seg:hover {
+    border-color: var(--b28);
+  }
+  .seg:has(input:checked) {
+    background: var(--chip);
+    border-color: var(--chip-bd);
+    color: var(--accent-tx);
+  }
+  .seg:has(input:focus-visible) {
+    outline: 2px solid var(--primary);
+    outline-offset: 2px;
+  }
+
+  .check {
+    display: flex;
+    align-items: flex-start;
+    gap: 11px;
+    cursor: pointer;
+  }
+  .cbox-input {
+    position: absolute;
+    opacity: 0;
+    width: 0;
+    height: 0;
+  }
+  .cbox {
+    width: 20px;
+    height: 20px;
+    border-radius: 6px;
+    border: 1.5px solid var(--b16);
+    background: var(--inset);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    margin-top: 1px;
+    transition: background .16s, border-color .16s, color .16s;
+    color: transparent;
+  }
+  .check:has(.cbox-input:checked) .cbox {
+    background: var(--primary);
+    border-color: var(--primary);
+    color: var(--pf);
+  }
+  .check:has(.cbox-input:focus-visible) .cbox {
+    outline: 2px solid var(--primary);
+    outline-offset: 2px;
+  }
+  .check-text {
+    font-size: 13.5px;
+    line-height: 1.5;
+    color: var(--t2);
+  }
+
+  .hp {
+    position: absolute;
+    left: -9999px;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+  }
+
+  .btn-p {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 9px;
+    width: 100%;
+    margin-top: 2px;
+    border: none;
+    background: var(--primary);
+    color: var(--pf);
+    font: 700 15.5px var(--font-sans);
+    padding: 15px 24px;
+    border-radius: 12px;
+    cursor: pointer;
+    box-shadow: var(--pshadow);
+    transition: transform .26s var(--ease-snap), background .2s;
+  }
+  .btn-p:hover {
+    background: var(--primary-h);
+    transform: translateY(-2px);
+  }
+  .btn-p:disabled {
+    opacity: .6;
+    cursor: default;
+    transform: none;
+  }
+  .wl-send-default,
+  .wl-send-loading {
+    display: inline-flex;
+    align-items: center;
+    gap: 9px;
+  }
+  .spin {
+    width: 16px;
+    height: 16px;
+    border: 2px solid color-mix(in srgb, var(--pf) 40%, transparent);
+    border-top-color: var(--pf);
+    border-radius: 50%;
+    display: inline-block;
+    animation: wl-spin .7s linear infinite;
+  }
+  @keyframes wl-spin { to { transform: rotate(360deg); } }
+
+  /* Success card */
+  .success-card {
+    padding: 44px 34px;
+    text-align: center;
+    animation: wl-pop .5s cubic-bezier(.2, .8, .3, 1) both;
+  }
+  @keyframes wl-pop {
+    from { opacity: 0; transform: scale(.9); }
+    to { opacity: 1; transform: scale(1); }
+  }
+  .ok-circle {
+    width: 76px;
+    height: 76px;
+    border-radius: 50%;
+    background: var(--ok-bg);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 0 auto 22px;
+  }
+  .done-h {
+    font-family: var(--font-display);
+    font-weight: 500;
+    letter-spacing: -0.02em;
+    font-size: 29px;
+    color: var(--ink);
+    margin: 0 0 12px;
+    outline: none;
+  }
+  .done-p {
+    margin: 0 auto 26px;
+    color: var(--t2);
+    font-size: 15.5px;
+    line-height: 1.6;
+    max-width: 340px;
+  }
+  .done-p b { color: var(--t1); }
+  .next {
+    background: var(--inset);
+    border: 1px solid var(--b08);
+    border-radius: 14px;
+    padding: 18px;
+    text-align: left;
+    margin-bottom: 24px;
+  }
+  .next-title { margin-bottom: 10px; }
+  .next-lines {
+    display: flex;
+    flex-direction: column;
+    gap: 9px;
+    font-size: 14px;
+    color: var(--t2);
+    line-height: 1.5;
+  }
+  .next-line {
+    display: flex;
+    gap: 9px;
+  }
+  .next-num {
+    color: var(--primary);
+    font-weight: 700;
+  }
+  .btn-g {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    border: 1px solid var(--b16);
+    background: var(--card);
+    color: var(--t1);
+    font: 600 15px var(--font-sans);
+    padding: 13px 20px;
+    border-radius: 11px;
+    cursor: pointer;
+    transition: background .22s, border-color .22s;
+  }
+  .btn-g:hover {
+    background: var(--hover);
+    border-color: var(--b28);
+  }
+
+  @media (max-width: 900px) {
+    .two { grid-template-columns: 1fr; }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .success-card { animation: none; }
+    .spin { animation: none; }
+    .btn-p { transition: none; }
+    .btn-p:hover { transform: none; }
+  }
+</style>
+
+<script>
+  import { waitlistSchema, fieldMessages } from "../../lib/waitlist-schema"
+
+  ;(function () {
+    const form = document.getElementById("wl-form") as HTMLFormElement | null
+    const formCard = document.getElementById("wl-form-card")
+    const successCard = document.getElementById("wl-success-card")
+    const submitBtn = document.getElementById("wl-submit") as HTMLButtonElement | null
+    if (!form || !formCard || !successCard || !submitBtn) return
+
+    const sendDefault = submitBtn.querySelector<HTMLElement>(".wl-send-default")
+    const sendLoading = submitBtn.querySelector<HTMLElement>(".wl-send-loading")
+    const generalError = document.getElementById("wl-error")
+
+    const nameEl = document.getElementById("wl-name") as HTMLInputElement
+    const emailEl = document.getElementById("wl-email") as HTMLInputElement
+    const bizEl = document.getElementById("wl-business") as HTMLInputElement
+    const consentEl = document.getElementById("wl-consent") as HTMLInputElement
+
+    // Required fields, in focus order. Validity + messages come from the
+    // shared zod schema (single source of truth with the Worker). Consent is
+    // an optional opt-in and is not validated here.
+    const fields = [
+      { key: "name", el: nameEl, errId: "err-name" },
+      { key: "email", el: emailEl, errId: "err-email" },
+      { key: "business", el: bizEl, errId: "err-business" },
+    ] as const
+
+    let touched = false
+
+    function currentValues() {
+      return {
+        name: nameEl.value,
+        email: emailEl.value,
+        business: bizEl.value,
+        maps_url: (document.getElementById("wl-maps") as HTMLInputElement).value,
+        locations:
+          (form!.querySelector('input[name="locations"]:checked') as HTMLInputElement | null)?.value ?? "",
+        source: (document.getElementById("wl-source") as HTMLSelectElement).value,
+        consent: consentEl.checked,
+      }
+    }
+
+    function currentErrors(): Record<string, string | undefined> {
+      const res = waitlistSchema.safeParse(currentValues())
+      return res.success ? {} : fieldMessages(res.error.issues)
+    }
+
+    function refresh() {
+      const errs = touched ? currentErrors() : {}
+      for (const f of fields) {
+        const msg = errs[f.key]
+        const errEl = document.getElementById(f.errId)
+        if (errEl) {
+          if (msg) errEl.textContent = msg
+          errEl.hidden = !msg
+        }
+        f.el.classList.toggle("bad", !!msg)
+        if (msg) {
+          f.el.setAttribute("aria-invalid", "true")
+          f.el.setAttribute("aria-describedby", f.errId)
+        } else {
+          f.el.removeAttribute("aria-invalid")
+          f.el.removeAttribute("aria-describedby")
+        }
+      }
+    }
+
+    // Live validation only after the first submit attempt.
+    fields.forEach((f) => {
+      f.el.addEventListener("input", () => {
+        if (touched) refresh()
+      })
+    })
+
+    function setSending(sending: boolean) {
+      submitBtn!.disabled = sending
+      if (sendDefault) sendDefault.hidden = sending
+      if (sendLoading) sendLoading.hidden = !sending
+    }
+
+    async function send() {
+      if (generalError) generalError.hidden = true
+      setSending(true)
+      const v = currentValues()
+      const payload = {
+        name: v.name.trim(),
+        email: v.email.trim(),
+        business: v.business.trim(),
+        maps_url: v.maps_url.trim(),
+        locations: v.locations,
+        source: v.source,
+        consent: v.consent,
+        company_website:
+          (form!.querySelector('input[name="company_website"]') as HTMLInputElement | null)?.value || "",
+      }
+      try {
+        const res = await fetch("/api/waitlist", {
+          method: "POST",
+          headers: { "content-type": "application/json" },
+          body: JSON.stringify(payload),
+        })
+        const data = (await res.json().catch(() => ({}))) as { ok?: boolean }
+        if (!res.ok || !data.ok) throw new Error("failed")
+        showSuccess(payload.name, payload.email)
+      } catch {
+        setSending(false)
+        if (generalError) generalError.hidden = false
+      }
+    }
+
+    function showSuccess(fullName: string, email: string) {
+      const first = fullName.trim().split(/\s+/)[0] || "there"
+      const nameSpan = document.getElementById("wl-done-name")
+      const emailSpan = document.getElementById("wl-done-email")
+      if (nameSpan) nameSpan.textContent = first
+      if (emailSpan) emailSpan.textContent = email
+      formCard!.hidden = true
+      successCard!.hidden = false
+      const heading = document.getElementById("wl-done-heading")
+      if (heading) heading.focus()
+    }
+
+    form.addEventListener("submit", (e) => {
+      e.preventDefault()
+      touched = true
+      refresh()
+      const errs = currentErrors()
+      const firstInvalid = fields.find((f) => errs[f.key])
+      if (firstInvalid) {
+        firstInvalid.el.focus()
+        return
+      }
+      send()
+    })
+  })()
+</script>
