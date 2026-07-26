@@ -406,3 +406,123 @@
     .btn-p:hover { transform: none; }
   }
 </style>
+
+<script>
+  ;(function () {
+    const form = document.getElementById("wl-form") as HTMLFormElement | null
+    const formCard = document.getElementById("wl-form-card")
+    const successCard = document.getElementById("wl-success-card")
+    const submitBtn = document.getElementById("wl-submit") as HTMLButtonElement | null
+    if (!form || !formCard || !successCard || !submitBtn) return
+
+    const sendDefault = submitBtn.querySelector<HTMLElement>(".wl-send-default")
+    const sendLoading = submitBtn.querySelector<HTMLElement>(".wl-send-loading")
+    const generalError = document.getElementById("wl-error")
+
+    const nameEl = document.getElementById("wl-name") as HTMLInputElement
+    const emailEl = document.getElementById("wl-email") as HTMLInputElement
+    const bizEl = document.getElementById("wl-business") as HTMLInputElement
+    const consentEl = document.getElementById("wl-consent") as HTMLInputElement
+
+    const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+
+    // Each required field: its input, its error span id, and a validity test.
+    const checks = [
+      { el: nameEl, errId: "err-name", ok: () => nameEl.value.trim().length > 0 },
+      { el: emailEl, errId: "err-email", ok: () => EMAIL_RE.test(emailEl.value.trim()) },
+      { el: bizEl, errId: "err-business", ok: () => bizEl.value.trim().length > 0 },
+      { el: consentEl, errId: "err-consent", ok: () => consentEl.checked },
+    ]
+
+    let touched = false
+
+    function applyField(c: (typeof checks)[number]) {
+      const errEl = document.getElementById(c.errId)
+      const valid = c.ok()
+      const showErr = touched && !valid
+      if (errEl) errEl.hidden = !showErr
+      // The consent input is visually hidden; mark its error state without
+      // the `.bad` input tint (which only makes sense on text inputs).
+      if (c.el !== consentEl) c.el.classList.toggle("bad", showErr)
+      if (showErr) {
+        c.el.setAttribute("aria-invalid", "true")
+        c.el.setAttribute("aria-describedby", c.errId)
+      } else {
+        c.el.removeAttribute("aria-invalid")
+        c.el.removeAttribute("aria-describedby")
+      }
+    }
+
+    function refresh() {
+      checks.forEach(applyField)
+    }
+
+    // Live validation only after the first submit attempt.
+    checks.forEach((c) => {
+      const evt = c.el === consentEl ? "change" : "input"
+      c.el.addEventListener(evt, () => {
+        if (touched) refresh()
+      })
+    })
+
+    function setSending(sending: boolean) {
+      submitBtn!.disabled = sending
+      if (sendDefault) sendDefault.hidden = sending
+      if (sendLoading) sendLoading.hidden = !sending
+    }
+
+    async function send() {
+      if (generalError) generalError.hidden = true
+      setSending(true)
+      const payload = {
+        name: nameEl.value.trim(),
+        email: emailEl.value.trim(),
+        business: bizEl.value.trim(),
+        maps_url: (document.getElementById("wl-maps") as HTMLInputElement).value.trim(),
+        locations:
+          (form!.querySelector('input[name="locations"]:checked') as HTMLInputElement | null)?.value || "",
+        source: (document.getElementById("wl-source") as HTMLSelectElement).value,
+        consent: consentEl.checked,
+        company_website:
+          (form!.querySelector('input[name="company_website"]') as HTMLInputElement | null)?.value || "",
+      }
+      try {
+        const res = await fetch("/api/waitlist", {
+          method: "POST",
+          headers: { "content-type": "application/json" },
+          body: JSON.stringify(payload),
+        })
+        const data = (await res.json().catch(() => ({}))) as { ok?: boolean }
+        if (!res.ok || !data.ok) throw new Error("failed")
+        showSuccess(payload.name, payload.email)
+      } catch {
+        setSending(false)
+        if (generalError) generalError.hidden = false
+      }
+    }
+
+    function showSuccess(fullName: string, email: string) {
+      const first = fullName.trim().split(/\s+/)[0] || "there"
+      const nameSpan = document.getElementById("wl-done-name")
+      const emailSpan = document.getElementById("wl-done-email")
+      if (nameSpan) nameSpan.textContent = first
+      if (emailSpan) emailSpan.textContent = email
+      formCard!.hidden = true
+      successCard!.hidden = false
+      const heading = document.getElementById("wl-done-heading")
+      if (heading) heading.focus()
+    }
+
+    form.addEventListener("submit", (e) => {
+      e.preventDefault()
+      touched = true
+      refresh()
+      const firstInvalid = checks.find((c) => !c.ok())
+      if (firstInvalid) {
+        firstInvalid.el.focus()
+        return
+      }
+      send()
+    })
+  })()
+</script>
