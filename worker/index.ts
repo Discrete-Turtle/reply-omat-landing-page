@@ -44,8 +44,25 @@ async function handleWaitlist(request: Request, env: Env): Promise<Response> {
   const email = str(body.email).trim().toLowerCase()
   const business = str(body.business).trim()
   const consent = body.consent === true
+  const maps_url = str(body.maps_url).trim()
+  const locations = str(body.locations).trim()
+  const source = str(body.source).trim()
 
-  if (!name || !business || !EMAIL_RE.test(email) || !consent) {
+  const ALLOWED_LOCATIONS = new Set(["", "1", "2-5", "6-20", "20+"])
+  const ALLOWED_SOURCES = new Set(["", "search", "social", "friend", "event", "other"])
+
+  if (
+    !name ||
+    name.length > 200 ||
+    !business ||
+    business.length > 200 ||
+    email.length > 254 ||
+    !EMAIL_RE.test(email) ||
+    maps_url.length > 2048 ||
+    !ALLOWED_LOCATIONS.has(locations) ||
+    !ALLOWED_SOURCES.has(source) ||
+    !consent
+  ) {
     return json({ ok: false, error: "Please complete the required fields." }, 400)
   }
 
@@ -53,9 +70,9 @@ async function handleWaitlist(request: Request, env: Env): Promise<Response> {
     name,
     email,
     business,
-    maps_url: str(body.maps_url).trim(),
-    locations: str(body.locations).trim(),
-    source: str(body.source).trim(),
+    maps_url,
+    locations,
+    source,
     consent: true,
     submitted_at: new Date().toISOString(),
   }

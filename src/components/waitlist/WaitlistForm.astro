@@ -24,25 +24,25 @@
     <div class="two">
       <div class="field">
         <label class="flabel" for="wl-name">Your name <span class="req">*</span></label>
-        <input class="inp" id="wl-name" name="name" type="text" placeholder="Sofia Marques" autocomplete="name"/>
+        <input class="inp" id="wl-name" name="name" type="text" placeholder="Sofia Marques" autocomplete="name" maxlength="200"/>
         <span class="err" id="err-name" hidden>Please tell us your name.</span>
       </div>
       <div class="field">
         <label class="flabel" for="wl-email">Work email <span class="req">*</span></label>
-        <input class="inp" id="wl-email" name="email" type="email" placeholder="you@yourplace.com" autocomplete="email"/>
+        <input class="inp" id="wl-email" name="email" type="email" placeholder="you@yourplace.com" autocomplete="email" maxlength="254"/>
         <span class="err" id="err-email" hidden>Enter a valid email address.</span>
       </div>
     </div>
 
     <div class="field">
       <label class="flabel" for="wl-business">Business name <span class="req">*</span></label>
-      <input class="inp" id="wl-business" name="business" type="text" placeholder="French Fries Factory" autocomplete="organization"/>
+      <input class="inp" id="wl-business" name="business" type="text" placeholder="French Fries Factory" autocomplete="organization" maxlength="200"/>
       <span class="err" id="err-business" hidden>Please tell us your business name.</span>
     </div>
 
     <div class="field">
       <label class="flabel" for="wl-maps">Google Maps link <span class="opt">(optional)</span></label>
-      <input class="inp" id="wl-maps" name="maps_url" type="url" placeholder="maps.google.com/…" autocomplete="off"/>
+      <input class="inp" id="wl-maps" name="maps_url" type="url" placeholder="maps.google.com/…" autocomplete="off" maxlength="2048"/>
       <span class="hint">Speeds up your setup. We use it to find your reviews.</span>
     </div>
 
