@@ -1,3 +1,41 @@
+# Pricing Revamp Implementation Plan
+
+> **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
+
+**Goal:** Replace the placeholder pricing section with the real three-plan model (Starter €5.99/mo, Yearly €9.99/mo, Lifetime €300 once), informational cards with no per-card CTA, bridged to the CtaBand by a scroll chevron.
+
+**Architecture:** Single Astro component rewrite (`src/components/Pricing.astro`) plus one attribute added to `src/components/CtaBand.astro`. Pure static markup + scoped CSS reusing the existing clay design tokens. No JS behavior changes — the existing `.reveal` IntersectionObserver stays as-is.
+
+**Tech Stack:** Astro 5, Tailwind v4 utility classes + a scoped `<style>` block, CSS custom properties from `src/styles/global.css`. Package manager is **bun**.
+
+## Global Constraints
+
+- Copy — €5.99 is **permanent for the first 2,500 customers** (not "first year"). The phrase "in your first year" must appear nowhere.
+- Anchor price **must render**: `€10.99` struck-through on both Starter and Yearly. Lifetime has no anchor.
+- Use existing tokens only (`--card`, `--primary`, `--pf`, `--ink`, `--t1`/`--t2`/`--t3`/`--t4`, `--accent-tx`, `--gold`, `--ok`, `--inset`, `--b08`/`--b12`/`--b16`, `--chip`, etc.). The only non-token literals allowed are the theme-independent gold tint rgba values specified below (mirrors the CtaBand precedent of deliberate one-offs).
+- Cards have **no per-card CTA button**. Conversion is the shared CtaBand below.
+- Internal links are plain root-relative (e.g. `/contact`, `#get-started`) — no `BASE_URL` prefix (assets use `BASE_URL`, links do not).
+- Must work in light and dark mode via tokens, and respect `prefers-reduced-motion` (existing pattern already covers the reveal).
+- Verification is `bun run build` (catches Astro/TS errors) + visual check in `bun run dev`. There is no unit-test harness for static markup; the "test" step is a build + a concrete visual checklist.
+
+---
+
+### Task 1: Rewrite the pricing cards (header + three-card grid)
+
+Full rewrite of `Pricing.astro` down to (but not including) the below-grid footer, which Task 2 adds. After this task the section renders three complete, correct cards with new copy, badges, strike anchors, tier icons, the coin row, and footnotes.
+
+**Files:**
+- Modify (full rewrite): `src/components/Pricing.astro`
+
+**Interfaces:**
+- Consumes: design tokens from `src/styles/global.css`; the `.eyebrow` and `.reveal` global classes (already used by the current file).
+- Produces: a `<section id="pricing">` containing `.reveal` header + `.price-grid` with three `.price` cards (middle one `.price.hot`). Task 2 appends a sibling `.pricing-foot` block inside the same `.mx-auto` container and links a chevron to `#get-started`.
+
+- [ ] **Step 1: Replace the file contents**
+
+Overwrite `src/components/Pricing.astro` with exactly this (note: the below-grid footer and its styles are intentionally absent — Task 2 adds them):
+
+```astro
 ---
 /**
  * Pricing — 3-tier plan grid (§5 of the design handoff, reworked 2026-07-26).
@@ -45,7 +83,7 @@
         </div>
         <span class="pbadge pbadge-gold">Early bird</span>
         <div class="pprice-row">
-          <span class="panchor" aria-hidden="true">€10.99</span>
+          <span class="panchor">€10.99</span>
           <span class="pprice">€5.99</span><span class="pmo">/mo</span>
         </div>
         <div class="psub text-t3">cancel anytime</div>
@@ -88,7 +126,7 @@
         </div>
         <span class="pbadge pbadge-pop">Most popular</span>
         <div class="pprice-row">
-          <span class="panchor" aria-hidden="true">€10.99</span>
+          <span class="panchor">€10.99</span>
           <span class="pprice">€9.99</span><span class="pmo">/mo</span>
         </div>
         <div class="psub text-t3">billed annually — €119.88</div>
@@ -149,18 +187,6 @@
         </div>
         <div class="pfoot">*Fair use: up to 1,000 replies per month.</div>
       </div>
-    </div>
-
-    <div class="pricing-foot reveal">
-      <p class="agency">
-        <span class="agency-icon" aria-hidden="true">
-          <svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 22h18"></path><path d="M6 18v-7"></path><path d="M10 18v-7"></path><path d="M14 18v-7"></path><path d="M18 18v-7"></path><path d="M4 11l8-6 8 6"></path></svg>
-        </span>
-        More than 5 locations? <a href="/contact">Talk to us about an agency plan</a>
-      </p>
-      <a href="#get-started" class="scroll-cue" aria-label="Jump to sign-up">
-        <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 9l6 6 6-6"></path></svg>
-      </a>
     </div>
   </div>
 </section>
@@ -303,6 +329,117 @@
     color: var(--t3);
   }
 
+  @media (prefers-reduced-motion: reduce) {
+    .price {
+      transition: none;
+    }
+    .price:hover {
+      transform: none;
+    }
+  }
+</style>
+
+<script>
+  ;(function () {
+    const root = document.getElementById("pricing")
+    if (!root) return
+    const reveals = root.querySelectorAll<HTMLElement>(".reveal")
+    if (!reveals.length) return
+
+    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return
+
+    const observer = new IntersectionObserver(
+      (entries, obs) => {
+        entries.forEach((entry) => {
+          if (entry.isIntersecting) {
+            entry.target.classList.add("in")
+            obs.unobserve(entry.target)
+          }
+        })
+      },
+      { threshold: 0.15 }
+    )
+    reveals.forEach((el) => observer.observe(el))
+  })()
+</script>
+```
+
+- [ ] **Step 2: Build to verify no errors**
+
+Run: `bun run build`
+Expected: build completes with no errors (exit 0). Astro/TS errors here mean a malformed template — fix before continuing.
+
+- [ ] **Step 3: Visual check in the dev server**
+
+Run: `bun run dev` and open the pricing section (`http://localhost:4321/#pricing`). Confirm:
+- Three cards: Starter, Yearly (highlighted with terracotta border + shadow), Lifetime.
+- Struck-through `€10.99` shows left of `€5.99` (Starter) and `€9.99` (Yearly); Lifetime shows `€300 once` with no anchor.
+- Badges: `Early bird` (gold-tinted), `Most popular` (filled terracotta), `One-off payment` (neutral).
+- Tier icons (sprout / calendar / infinity) render tinted next to each tier name.
+- Coin row on Starter (`Under 20 cents a day`) uses a gold coin icon, not a green tick.
+- Footnotes render at the bottom of Starter and Lifetime; cards stay equal height.
+- Toggle dark mode (the header toggle) — text, badges, and footnotes remain legible (AA). If the gold badge or a footnote looks low-contrast in either theme, nudge the badge tint alpha / use `--t2` for the footnote and re-check.
+- Narrow the window below 900px — cards stack to one centered column (max 440px).
+- The phrase "in your first year" appears nowhere.
+
+- [ ] **Step 4: Commit**
+
+```bash
+git add src/components/Pricing.astro
+git commit -m "feat: rework pricing to real three-plan model"
+```
+
+---
+
+### Task 2: Below-grid agency line + scroll chevron bridge
+
+Adds the "agency plan" line and a scroll chevron that jumps to the CtaBand, since the cards have no CTA. Requires giving the CtaBand an anchor target.
+
+**Files:**
+- Modify: `src/components/CtaBand.astro` (add `id="get-started"` to the `<section>`)
+- Modify: `src/components/Pricing.astro` (append `.pricing-foot` block inside the container; add its styles)
+
+**Interfaces:**
+- Consumes: the `.price-grid`/container markup and tokens from Task 1.
+- Produces: an in-page anchor `#get-started` on the CtaBand section; a `.pricing-foot` block with the agency link (`/contact`) and a chevron `<a href="#get-started">`.
+
+- [ ] **Step 1: Add the anchor id to the CtaBand section**
+
+In `src/components/CtaBand.astro`, change the opening section tag:
+
+```astro
+<section class="w-full pb-16 min-[860px]:pb-[74px]">
+```
+
+to:
+
+```astro
+<section id="get-started" class="w-full pb-16 min-[860px]:pb-[74px]">
+```
+
+- [ ] **Step 2: Append the below-grid footer to Pricing**
+
+In `src/components/Pricing.astro`, insert this block immediately after the closing `</div>` of `.price-grid` and before the closing `</div>` of the `.mx-auto` container (i.e. as the last child of `<div class="mx-auto max-w-[1200px] ...">`):
+
+```astro
+      <div class="pricing-foot reveal">
+        <p class="agency">
+          <span class="agency-icon" aria-hidden="true">
+            <svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 22h18"></path><path d="M6 18v-7"></path><path d="M10 18v-7"></path><path d="M14 18v-7"></path><path d="M18 18v-7"></path><path d="M4 11l8-6 8 6"></path></svg>
+          </span>
+          More than 5 locations? <a href="/contact">Talk to us about an agency plan</a>
+        </p>
+        <a href="#get-started" class="scroll-cue" aria-label="Jump to sign-up">
+          <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 9l6 6 6-6"></path></svg>
+        </a>
+      </div>
+```
+
+- [ ] **Step 3: Add the footer styles**
+
+In the `<style>` block of `src/components/Pricing.astro`, add these rules immediately before the closing `@media (prefers-reduced-motion: reduce)` block:
+
+```css
   .pricing-foot {
     margin-top: 26px;
     display: flex;
@@ -350,7 +487,11 @@
     border-color: var(--b28);
     background: var(--hover);
   }
+```
 
+Then, in the existing `@media (prefers-reduced-motion: reduce)` block of the same `<style>`, add `.scroll-cue` to the transition-none rule and a no-transform hover so the reduced-motion set reads:
+
+```css
   @media (prefers-reduced-motion: reduce) {
     .price,
     .scroll-cue {
@@ -361,28 +502,45 @@
       transform: none;
     }
   }
-</style>
+```
 
-<script>
-  ;(function () {
-    const root = document.getElementById("pricing")
-    if (!root) return
-    const reveals = root.querySelectorAll<HTMLElement>(".reveal")
-    if (!reveals.length) return
+- [ ] **Step 4: Build to verify no errors**
 
-    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return
+Run: `bun run build`
+Expected: build completes with no errors (exit 0).
 
-    const observer = new IntersectionObserver(
-      (entries, obs) => {
-        entries.forEach((entry) => {
-          if (entry.isIntersecting) {
-            entry.target.classList.add("in")
-            obs.unobserve(entry.target)
-          }
-        })
-      },
-      { threshold: 0.15 }
-    )
-    reveals.forEach((el) => observer.observe(el))
-  })()
-</script>
+- [ ] **Step 5: Visual check**
+
+Run: `bun run dev` and at the pricing section confirm:
+- Below the cards: a centered line "🏛 More than 5 locations? **Talk to us about an agency plan**" with the linked text underlined; the link points to `/contact` (click it → contact page loads).
+- A round chevron-down button is centered below the agency line.
+- Clicking the chevron smooth/instant-scrolls down to the "Stop dreading your reviews." CtaBand (the `#get-started` anchor).
+- Both elements fade in with the section (`.reveal`), and look correct in light and dark mode.
+
+- [ ] **Step 6: Commit**
+
+```bash
+git add src/components/Pricing.astro src/components/CtaBand.astro
+git commit -m "feat: add agency-plan line and scroll-to-CTA chevron to pricing"
+```
+
+---
+
+## Self-Review
+
+**Spec coverage** (against `2026-07-26-pricing-revamp-design.md`):
+- Section shell / header copy → Task 1 Step 1. ✓
+- All three cards (icons, badges, anchor, price, sub-line, features, footnotes) → Task 1 Step 1. ✓
+- Anchor renders on Starter + Yearly, none on Lifetime → Task 1 markup + `.panchor` style. ✓
+- "in your first year" dropped; 2,500 permanence in Starter footnote + section sub → Task 1. ✓
+- Badge re-map to gold/terracotta/neutral → `.pbadge-*` styles. ✓
+- Coin row → `.coin` + Starter markup. ✓
+- No per-card CTA → cards contain no button. ✓
+- Agency line → `/contact` → Task 2. ✓
+- Scroll chevron → `#get-started` on CtaBand → Task 2. ✓
+- Dark mode + reduced-motion → tokens + reduced-motion media block. ✓
+- Out-of-scope backend items → not touched. ✓
+
+**Placeholder scan:** No TBD/TODO; every code step contains full markup/CSS. ✓
+
+**Type/name consistency:** Class names used in markup (`.pbadge-gold/-pop/-neutral`, `.ptier-row`, `.ptier-icon`, `.pprice-row`, `.panchor`, `.coin`, `.pfoot`, `.pricing-foot`, `.agency`, `.agency-icon`, `.scroll-cue`) each have a matching style rule. The `#get-started` anchor produced in Task 2 Step 1 matches the `href="#get-started"` in Task 2 Step 2. ✓
