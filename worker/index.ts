@@ -28,6 +28,10 @@ async function handleWaitlist(request: Request, env: Env): Promise<Response> {
     return json({ ok: false, error: "Invalid request." }, 400)
   }
 
+  if (typeof body !== "object" || body === null) {
+    return json({ ok: false, error: "Invalid request." }, 400)
+  }
+
   const str = (v: unknown) => (typeof v === "string" ? v : "")
 
   // Honeypot: bots fill the hidden field. Absorb silently with a 200 so
@@ -50,8 +54,8 @@ async function handleWaitlist(request: Request, env: Env): Promise<Response> {
     email,
     business,
     maps_url: str(body.maps_url).trim(),
-    locations: str(body.locations),
-    source: str(body.source),
+    locations: str(body.locations).trim(),
+    source: str(body.source).trim(),
     consent: true,
     submitted_at: new Date().toISOString(),
   }
