@@ -15,7 +15,7 @@
  * server with no Google login — the SCRIPT_SECRET check is the real gate.
  */
 const SCRIPT_SECRET = 'REPLACE_WITH_A_LONG_RANDOM_SECRET'; // must match SHEETS_WEBHOOK_SECRET
-const SHEET_TAB = 'Sheet1';
+const SHEET_TAB = 'Signups'; // the tab name inside your Sheet — rename the tab to match
 
 function doPost(e) {
   try {

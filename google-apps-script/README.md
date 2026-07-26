@@ -6,7 +6,7 @@ for people without Cloudflare access.
 
 ## One-time setup
 
-1. **Create the Sheet.** Add a header row in the first tab (named `Sheet1`):
+1. **Create the Sheet.** Rename the first tab to `Signups` (must match `SHEET_TAB` in the script), and add a header row:
    `submitted_at | name | business | email | locations | source | maps_url | consent`
 2. **Add the script.** Extensions → Apps Script → paste `waitlist-sheet.gs`.
    Set `SCRIPT_SECRET` to a long random string (e.g. `openssl rand -hex 24`).
