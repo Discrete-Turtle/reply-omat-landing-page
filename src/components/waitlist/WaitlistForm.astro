@@ -50,9 +50,9 @@
       <span class="flabel" id="wl-loc-label">How many locations?</span>
       <div class="segs" role="radiogroup" aria-labelledby="wl-loc-label">
         <label class="seg"><input type="radio" name="locations" value="1" checked/><span>1</span></label>
-        <label class="seg"><input type="radio" name="locations" value="2-5"/><span>2 to 5</span></label>
-        <label class="seg"><input type="radio" name="locations" value="6-20"/><span>6 to 20</span></label>
-        <label class="seg"><input type="radio" name="locations" value="20+"/><span>20+</span></label>
+        <label class="seg"><input type="radio" name="locations" value="2-3"/><span>2 to 3</span></label>
+        <label class="seg"><input type="radio" name="locations" value="4-5"/><span>4 to 5</span></label>
+        <label class="seg"><input type="radio" name="locations" value="6+"/><span>6 or more</span></label>
       </div>
     </div>
 
@@ -73,9 +73,8 @@
       <span class="cbox" aria-hidden="true">
         <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"></path></svg>
       </span>
-      <span class="check-text">Email me about my invite and product updates. I can unsubscribe any time. See the <a href="/privacy">Privacy Policy</a>.</span>
+      <span class="check-text">Also email me product updates and occasional tips. Optional — I can unsubscribe any time. See the <a href="/privacy">Privacy Policy</a>.</span>
     </label>
-    <span class="err" id="err-consent" hidden>Please tick this so we can email you your invite.</span>
 
     <span class="err wl-general" id="wl-error" role="alert" hidden>Something went wrong — please try again.</span>
 
@@ -408,6 +407,8 @@
 </style>
 
 <script>
+  import { waitlistSchema, fieldMessages } from "../../lib/waitlist-schema"
+
   ;(function () {
     const form = document.getElementById("wl-form") as HTMLFormElement | null
     const formCard = document.getElementById("wl-form-card")
@@ -424,43 +425,58 @@
     const bizEl = document.getElementById("wl-business") as HTMLInputElement
     const consentEl = document.getElementById("wl-consent") as HTMLInputElement
 
-    const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
-
-    // Each required field: its input, its error span id, and a validity test.
-    const checks = [
-      { el: nameEl, errId: "err-name", ok: () => nameEl.value.trim().length > 0 },
-      { el: emailEl, errId: "err-email", ok: () => EMAIL_RE.test(emailEl.value.trim()) },
-      { el: bizEl, errId: "err-business", ok: () => bizEl.value.trim().length > 0 },
-      { el: consentEl, errId: "err-consent", ok: () => consentEl.checked },
-    ]
+    // Required fields, in focus order. Validity + messages come from the
+    // shared zod schema (single source of truth with the Worker). Consent is
+    // an optional opt-in and is not validated here.
+    const fields = [
+      { key: "name", el: nameEl, errId: "err-name" },
+      { key: "email", el: emailEl, errId: "err-email" },
+      { key: "business", el: bizEl, errId: "err-business" },
+    ] as const
 
     let touched = false
 
-    function applyField(c: (typeof checks)[number]) {
-      const errEl = document.getElementById(c.errId)
-      const valid = c.ok()
-      const showErr = touched && !valid
-      if (errEl) errEl.hidden = !showErr
-      // The consent input is visually hidden; mark its error state without
-      // the `.bad` input tint (which only makes sense on text inputs).
-      if (c.el !== consentEl) c.el.classList.toggle("bad", showErr)
-      if (showErr) {
-        c.el.setAttribute("aria-invalid", "true")
-        c.el.setAttribute("aria-describedby", c.errId)
-      } else {
-        c.el.removeAttribute("aria-invalid")
-        c.el.removeAttribute("aria-describedby")
+    function currentValues() {
+      return {
+        name: nameEl.value,
+        email: emailEl.value,
+        business: bizEl.value,
+        maps_url: (document.getElementById("wl-maps") as HTMLInputElement).value,
+        locations:
+          (form!.querySelector('input[name="locations"]:checked') as HTMLInputElement | null)?.value ?? "",
+        source: (document.getElementById("wl-source") as HTMLSelectElement).value,
+        consent: consentEl.checked,
       }
     }
 
+    function currentErrors(): Record<string, string | undefined> {
+      const res = waitlistSchema.safeParse(currentValues())
+      return res.success ? {} : fieldMessages(res.error.issues)
+    }
+
     function refresh() {
-      checks.forEach(applyField)
+      const errs = touched ? currentErrors() : {}
+      for (const f of fields) {
+        const msg = errs[f.key]
+        const errEl = document.getElementById(f.errId)
+        if (errEl) {
+          if (msg) errEl.textContent = msg
+          errEl.hidden = !msg
+        }
+        f.el.classList.toggle("bad", !!msg)
+        if (msg) {
+          f.el.setAttribute("aria-invalid", "true")
+          f.el.setAttribute("aria-describedby", f.errId)
+        } else {
+          f.el.removeAttribute("aria-invalid")
+          f.el.removeAttribute("aria-describedby")
+        }
+      }
     }
 
     // Live validation only after the first submit attempt.
-    checks.forEach((c) => {
-      const evt = c.el === consentEl ? "change" : "input"
-      c.el.addEventListener(evt, () => {
+    fields.forEach((f) => {
+      f.el.addEventListener("input", () => {
         if (touched) refresh()
       })
     })
@@ -474,15 +490,15 @@
     async function send() {
       if (generalError) generalError.hidden = true
       setSending(true)
+      const v = currentValues()
       const payload = {
-        name: nameEl.value.trim(),
-        email: emailEl.value.trim(),
-        business: bizEl.value.trim(),
-        maps_url: (document.getElementById("wl-maps") as HTMLInputElement).value.trim(),
-        locations:
-          (form!.querySelector('input[name="locations"]:checked') as HTMLInputElement | null)?.value || "",
-        source: (document.getElementById("wl-source") as HTMLSelectElement).value,
-        consent: consentEl.checked,
+        name: v.name.trim(),
+        email: v.email.trim(),
+        business: v.business.trim(),
+        maps_url: v.maps_url.trim(),
+        locations: v.locations,
+        source: v.source,
+        consent: v.consent,
         company_website:
           (form!.querySelector('input[name="company_website"]') as HTMLInputElement | null)?.value || "",
       }
@@ -517,7 +533,8 @@
       e.preventDefault()
       touched = true
       refresh()
-      const firstInvalid = checks.find((c) => !c.ok())
+      const errs = currentErrors()
+      const firstInvalid = fields.find((f) => errs[f.key])
       if (firstInvalid) {
         firstInvalid.el.focus()
         return
