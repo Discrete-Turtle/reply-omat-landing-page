@@ -1,22 +1,23 @@
 {
-  "$schema": "node_modules/wrangler/config-schema.json",
-  "name": "reply-omat-landing-page",
-  "compatibility_date": "2026-06-01",
-  "main": "worker/index.ts",
-  "observability": {
-    "enabled": true
-  },
-  "assets": {
-    "directory": "./dist",
-    "binding": "ASSETS"
-  },
-  "compatibility_flags": [
-    "nodejs_compat"
-  ],
-  "kv_namespaces": [
-    {
-      "binding": "WAITLIST",
-      "id": "REPLACE_WITH_KV_NAMESPACE_ID"
-    }
-  ]
+	"$schema": "node_modules/wrangler/config-schema.json",
+	"name": "reply-omat-landing-page",
+	"compatibility_date": "2026-06-01",
+	"main": "worker/index.ts",
+	"observability": {
+		"enabled": true
+	},
+	"assets": {
+		"directory": "./dist",
+		"binding": "ASSETS"
+	},
+	"compatibility_flags": [
+		"nodejs_compat"
+	],
+	"kv_namespaces": [
+		{
+			"binding": "WAITLIST",
+			"id": "1bf9bfcbb2554358b1c37fae9a6a569f",
+			"remote": true
+		}
+	]
 }
