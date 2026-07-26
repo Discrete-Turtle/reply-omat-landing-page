@@ -150,6 +150,18 @@
         <div class="pfoot">*Fair use: up to 1,000 replies per month.</div>
       </div>
     </div>
+
+    <div class="pricing-foot reveal">
+      <p class="agency">
+        <span class="agency-icon" aria-hidden="true">
+          <svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 22h18"></path><path d="M6 18v-7"></path><path d="M10 18v-7"></path><path d="M14 18v-7"></path><path d="M18 18v-7"></path><path d="M4 11l8-6 8 6"></path></svg>
+        </span>
+        More than 5 locations? <a href="/contact">Talk to us about an agency plan</a>
+      </p>
+      <a href="#get-started" class="scroll-cue" aria-label="Jump to sign-up">
+        <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 9l6 6 6-6"></path></svg>
+      </a>
+    </div>
   </div>
 </section>
 
@@ -291,11 +303,61 @@
     color: var(--t3);
   }
 
+  .pricing-foot {
+    margin-top: 26px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 18px;
+  }
+  .agency {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    margin: 0;
+    font-size: 14.5px;
+    color: var(--t2);
+    text-align: center;
+  }
+  .agency-icon {
+    color: var(--t3);
+    line-height: 0;
+    flex-shrink: 0;
+  }
+  .agency a {
+    color: var(--accent-tx);
+    font-weight: 600;
+    text-decoration: underline;
+    text-underline-offset: 2px;
+  }
+  .agency a:hover {
+    color: var(--primary);
+  }
+  .scroll-cue {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 42px;
+    height: 42px;
+    border-radius: 99px;
+    background: var(--card);
+    border: 1px solid var(--b16);
+    color: var(--t2);
+    transition: transform 0.26s var(--ease-snap), border-color 0.22s, background 0.22s;
+  }
+  .scroll-cue:hover {
+    transform: translateY(2px);
+    border-color: var(--b28);
+    background: var(--hover);
+  }
+
   @media (prefers-reduced-motion: reduce) {
-    .price {
+    .price,
+    .scroll-cue {
       transition: none;
     }
-    .price:hover {
+    .price:hover,
+    .scroll-cue:hover {
       transform: none;
     }
   }
