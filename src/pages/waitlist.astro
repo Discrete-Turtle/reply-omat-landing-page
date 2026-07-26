@@ -1,0 +1,92 @@
+---
+import '../styles/global.css'
+
+import Header from '@/components/Header.astro'
+import Footer from '@/components/Footer.astro'
+import WaitlistPitch from '@/components/waitlist/WaitlistPitch.astro'
+---
+
+<html lang="en">
+<head>
+    <meta charset="utf-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1"/>
+    <link rel="icon" type="image/svg+xml" href={`${import.meta.env.BASE_URL}favicon.svg`}/>
+    <link rel="icon" href={`${import.meta.env.BASE_URL}favicon.ico`}/>
+    <link rel="apple-touch-icon" href={`${import.meta.env.BASE_URL}apple-touch-icon.png`}/>
+    <meta name="generator" content={Astro.generator}/>
+    <title>Join the waitlist — ReplyOmat</title>
+    <meta name="description" content="Request an invite to the ReplyOmat beta. AI-drafted replies to your Google reviews, approved by you."/>
+    <meta property="og:title" content="Join the waitlist — ReplyOmat"/>
+    <meta property="og:description" content="Request an invite to the ReplyOmat beta. AI-drafted replies to your Google reviews, approved by you."/>
+    <meta property="og:url" content="https://replyomat.ai/waitlist"/>
+    <meta property="og:type" content="website"/>
+    <meta name="twitter:card" content="summary"/>
+    <meta name="twitter:title" content="Join the waitlist — ReplyOmat"/>
+    <meta name="twitter:description" content="Request an invite to the ReplyOmat beta. AI-drafted replies to your Google reviews, approved by you."/>
+    <script is:inline>
+        (function () {
+            document.documentElement.classList.add('js');
+            var stored = null;
+            try {
+                stored = localStorage.getItem('theme');
+            } catch (e) {}
+            var dark = stored ? stored === 'dark' : window.matchMedia('(prefers-color-scheme: dark)').matches;
+            document.documentElement.classList.toggle('dark', dark);
+
+            window.__setTheme = function (isDark) {
+                document.documentElement.classList.toggle('dark', isDark);
+                try {
+                    localStorage.setItem('theme', isDark ? 'dark' : 'light');
+                } catch (e) {}
+            };
+        })();
+    </script>
+</head>
+<body class="bg-bg text-t1 min-h-screen flex flex-col overflow-x-hidden">
+<Header/>
+<main class="wl-main flex-1 w-full">
+    <div class="wl-ripple" aria-hidden="true">
+        <span class="ripple-ring"></span>
+        <span class="ripple-ring ripple-d1"></span>
+        <span class="ripple-ring ripple-d2"></span>
+    </div>
+    <div class="wl-grid mx-auto max-w-[1200px]">
+        <WaitlistPitch/>
+        <div id="wl-right" class="wl-right"></div>
+    </div>
+</main>
+<Footer/>
+
+<style>
+    .wl-main {
+        position: relative;
+        overflow: hidden;
+    }
+    .wl-ripple {
+        position: absolute;
+        top: 34%;
+        left: 24%;
+        pointer-events: none;
+    }
+    .ripple-d1 { animation-delay: 2.33s; }
+    .ripple-d2 { animation-delay: 4.66s; }
+    .wl-grid {
+        display: grid;
+        grid-template-columns: 1fr 1.05fr;
+        gap: 56px;
+        align-items: start;
+        padding: 56px 28px 76px;
+    }
+    .wl-right {
+        position: relative;
+    }
+    @media (max-width: 900px) {
+        .wl-grid {
+            grid-template-columns: 1fr;
+            gap: 36px;
+            padding: 36px 20px 56px;
+        }
+    }
+</style>
+</body>
+</html>
