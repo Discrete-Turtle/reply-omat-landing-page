@@ -7,6 +7,7 @@
  * the same schema the client form island uses — one source of truth.
  */
 import { waitlistSchema } from "../src/lib/waitlist-schema"
+import { appendSignup } from "./lib/sheets"
 
 interface Env {
   WAITLIST: {
@@ -14,6 +15,12 @@ interface Env {
     put(key: string, value: string): Promise<void>
   }
   ASSETS: { fetch(request: Request): Promise<Response> }
+  SHEETS_WEBHOOK_URL?: string
+  SHEETS_WEBHOOK_SECRET?: string
+}
+
+interface ExecutionContext {
+  waitUntil(promise: Promise<unknown>): void
 }
 
 function json(body: unknown, status = 200): Response {
@@ -23,7 +30,7 @@ function json(body: unknown, status = 200): Response {
   })
 }
 
-async function handleWaitlist(request: Request, env: Env): Promise<Response> {
+async function handleWaitlist(request: Request, env: Env, ctx: ExecutionContext): Promise<Response> {
   let body: Record<string, unknown>
   try {
     body = (await request.json()) as Record<string, unknown>
@@ -68,16 +75,19 @@ async function handleWaitlist(request: Request, env: Env): Promise<Response> {
   const existing = await env.WAITLIST.get(key)
   if (!existing) {
     await env.WAITLIST.put(key, JSON.stringify(record))
+    // Best-effort mirror to the Google Sheet — after the response, never
+    // blocking or failing the signup (KV is the source of truth).
+    ctx.waitUntil(appendSignup(record, env))
   }
 
   return json({ ok: true })
 }
 
 export default {
-  async fetch(request: Request, env: Env): Promise<Response> {
+  async fetch(request: Request, env: Env, ctx: ExecutionContext): Promise<Response> {
     const url = new URL(request.url)
     if (url.pathname === "/api/waitlist" && request.method === "POST") {
-      return handleWaitlist(request, env)
+      return handleWaitlist(request, env, ctx)
     }
     return env.ASSETS.fetch(request)
   },
